@@ -225,3 +225,15 @@ gitpush
 - 新仕様は必ず **合意 → README追記 → コード実装** の順
 - WSL2内で全作業を完結（Windowsファイルシステムとの直接操作は避ける）
 - GitHub更新は`gitpush`エイリアスで簡単実行可能
+
+### 効率的なコード確認フロー
+1. AIが「○○のコードを確認したい」と言う
+2. AIが具体的なRaw URLを提示：
+   例：`https://raw.githubusercontent.com/KIYUKIYUKIYU/betvalue-finder/main/[ファイルパス]`
+3. ユーザーがそのURLをコピペして返信
+4. AIがweb_fetchで自動読み込み
+
+**メリット**：
+- ユーザーはURLをコピペするだけ
+- AIは最新のコードを確実に取得
+- ローカルの変更も反映される（push済みなら）
