@@ -1,0 +1,1087 @@
+{
+  "sport": "mlb",
+  "fetch_date": "2025-08-26",
+  "fetch_time": "2025-08-25T23:03:54.784490",
+  "timezone": "Asia/Tokyo",
+  "games": [
+    {
+      "id": 165245,
+      "home": "Baltimore Orioles",
+      "away": "Boston Red Sox",
+      "home_jp": "オリオールズ",
+      "away_jp": "レッドソックス",
+      "datetime": "2025-08-26T07:35:00+09:00 07:35",
+      "league": "MLB",
+      "status": "Not Started",
+      "raw": {
+        "id": 165245,
+        "date": "2025-08-26T07:35:00+09:00",
+        "time": "07:35",
+        "timestamp": 1756161300,
+        "timezone": "Asia/Tokyo",
+        "week": null,
+        "status": {
+          "long": "Not Started",
+          "short": "NS"
+        },
+        "country": {
+          "id": 1,
+          "name": "USA",
+          "code": "US",
+          "flag": "https://media.api-sports.io/flags/us.svg"
+        },
+        "league": {
+          "id": 1,
+          "name": "MLB",
+          "type": "League",
+          "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+          "season": 2025
+        },
+        "teams": {
+          "home": {
+            "id": 4,
+            "name": "Baltimore Orioles",
+            "logo": "https://media.api-sports.io/baseball/teams/4.png"
+          },
+          "away": {
+            "id": 5,
+            "name": "Boston Red Sox",
+            "logo": "https://media.api-sports.io/baseball/teams/5.png"
+          }
+        },
+        "scores": {
+          "home": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          },
+          "away": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          }
+        }
+      }
+    },
+    {
+      "id": 165247,
+      "home": "Cleveland Guardians",
+      "away": "Tampa Bay Rays",
+      "home_jp": "ガーディアンズ",
+      "away_jp": "レイズ",
+      "datetime": "2025-08-26T07:40:00+09:00 07:40",
+      "league": "MLB",
+      "status": "Not Started",
+      "raw": {
+        "id": 165247,
+        "date": "2025-08-26T07:40:00+09:00",
+        "time": "07:40",
+        "timestamp": 1756161600,
+        "timezone": "Asia/Tokyo",
+        "week": null,
+        "status": {
+          "long": "Not Started",
+          "short": "NS"
+        },
+        "country": {
+          "id": 1,
+          "name": "USA",
+          "code": "US",
+          "flag": "https://media.api-sports.io/flags/us.svg"
+        },
+        "league": {
+          "id": 1,
+          "name": "MLB",
+          "type": "League",
+          "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+          "season": 2025
+        },
+        "teams": {
+          "home": {
+            "id": 9,
+            "name": "Cleveland Guardians",
+            "logo": "https://media.api-sports.io/baseball/teams/9.png"
+          },
+          "away": {
+            "id": 34,
+            "name": "Tampa Bay Rays",
+            "logo": "https://media.api-sports.io/baseball/teams/34.png"
+          }
+        },
+        "scores": {
+          "home": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          },
+          "away": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          }
+        }
+      }
+    },
+    {
+      "id": 165253,
+      "home": "Miami Marlins",
+      "away": "Atlanta Braves",
+      "home_jp": "マーリンズ",
+      "away_jp": "ブレーブス",
+      "datetime": "2025-08-26T07:40:00+09:00 07:40",
+      "league": "MLB",
+      "status": "Not Started",
+      "raw": {
+        "id": 165253,
+        "date": "2025-08-26T07:40:00+09:00",
+        "time": "07:40",
+        "timestamp": 1756161600,
+        "timezone": "Asia/Tokyo",
+        "week": null,
+        "status": {
+          "long": "Not Started",
+          "short": "NS"
+        },
+        "country": {
+          "id": 1,
+          "name": "USA",
+          "code": "US",
+          "flag": "https://media.api-sports.io/flags/us.svg"
+        },
+        "league": {
+          "id": 1,
+          "name": "MLB",
+          "type": "League",
+          "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+          "season": 2025
+        },
+        "teams": {
+          "home": {
+            "id": 19,
+            "name": "Miami Marlins",
+            "logo": "https://media.api-sports.io/baseball/teams/19.png"
+          },
+          "away": {
+            "id": 3,
+            "name": "Atlanta Braves",
+            "logo": "https://media.api-sports.io/baseball/teams/3.png"
+          }
+        },
+        "scores": {
+          "home": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          },
+          "away": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          }
+        }
+      }
+    },
+    {
+      "id": 165254,
+      "home": "New York Yankees",
+      "away": "Washington Nationals",
+      "home_jp": "ヤンキース",
+      "away_jp": "ナショナルズ",
+      "datetime": "2025-08-26T08:05:00+09:00 08:05",
+      "league": "MLB",
+      "status": "Not Started",
+      "raw": {
+        "id": 165254,
+        "date": "2025-08-26T08:05:00+09:00",
+        "time": "08:05",
+        "timestamp": 1756163100,
+        "timezone": "Asia/Tokyo",
+        "week": null,
+        "status": {
+          "long": "Not Started",
+          "short": "NS"
+        },
+        "country": {
+          "id": 1,
+          "name": "USA",
+          "code": "US",
+          "flag": "https://media.api-sports.io/flags/us.svg"
+        },
+        "league": {
+          "id": 1,
+          "name": "MLB",
+          "type": "League",
+          "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+          "season": 2025
+        },
+        "teams": {
+          "home": {
+            "id": 25,
+            "name": "New York Yankees",
+            "logo": "https://media.api-sports.io/baseball/teams/25.png"
+          },
+          "away": {
+            "id": 37,
+            "name": "Washington Nationals",
+            "logo": "https://media.api-sports.io/baseball/teams/37.png"
+          }
+        },
+        "scores": {
+          "home": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          },
+          "away": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          }
+        }
+      }
+    },
+    {
+      "id": 165255,
+      "home": "Toronto Blue Jays",
+      "away": "Minnesota Twins",
+      "home_jp": "ブルージェイズ",
+      "away_jp": "ツインズ",
+      "datetime": "2025-08-26T08:07:00+09:00 08:07",
+      "league": "MLB",
+      "status": "Not Started",
+      "raw": {
+        "id": 165255,
+        "date": "2025-08-26T08:07:00+09:00",
+        "time": "08:07",
+        "timestamp": 1756163220,
+        "timezone": "Asia/Tokyo",
+        "week": null,
+        "status": {
+          "long": "Not Started",
+          "short": "NS"
+        },
+        "country": {
+          "id": 1,
+          "name": "USA",
+          "code": "US",
+          "flag": "https://media.api-sports.io/flags/us.svg"
+        },
+        "league": {
+          "id": 1,
+          "name": "MLB",
+          "type": "League",
+          "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+          "season": 2025
+        },
+        "teams": {
+          "home": {
+            "id": 36,
+            "name": "Toronto Blue Jays",
+            "logo": "https://media.api-sports.io/baseball/teams/36.png"
+          },
+          "away": {
+            "id": 22,
+            "name": "Minnesota Twins",
+            "logo": "https://media.api-sports.io/baseball/teams/22.png"
+          }
+        },
+        "scores": {
+          "home": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          },
+          "away": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          }
+        }
+      }
+    },
+    {
+      "id": 165249,
+      "home": "New York Mets",
+      "away": "Philadelphia Phillies",
+      "home_jp": "メッツ",
+      "away_jp": "フィリーズ",
+      "datetime": "2025-08-26T08:10:00+09:00 08:10",
+      "league": "MLB",
+      "status": "Not Started",
+      "raw": {
+        "id": 165249,
+        "date": "2025-08-26T08:10:00+09:00",
+        "time": "08:10",
+        "timestamp": 1756163400,
+        "timezone": "Asia/Tokyo",
+        "week": null,
+        "status": {
+          "long": "Not Started",
+          "short": "NS"
+        },
+        "country": {
+          "id": 1,
+          "name": "USA",
+          "code": "US",
+          "flag": "https://media.api-sports.io/flags/us.svg"
+        },
+        "league": {
+          "id": 1,
+          "name": "MLB",
+          "type": "League",
+          "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+          "season": 2025
+        },
+        "teams": {
+          "home": {
+            "id": 24,
+            "name": "New York Mets",
+            "logo": "https://media.api-sports.io/baseball/teams/24.png"
+          },
+          "away": {
+            "id": 27,
+            "name": "Philadelphia Phillies",
+            "logo": "https://media.api-sports.io/baseball/teams/27.png"
+          }
+        },
+        "scores": {
+          "home": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          },
+          "away": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          }
+        }
+      }
+    },
+    {
+      "id": 165246,
+      "home": "Chicago White Sox",
+      "away": "Kansas City Royals",
+      "home_jp": "ホワイトソックス",
+      "away_jp": "ロイヤルズ",
+      "datetime": "2025-08-26T08:40:00+09:00 08:40",
+      "league": "MLB",
+      "status": "Not Started",
+      "raw": {
+        "id": 165246,
+        "date": "2025-08-26T08:40:00+09:00",
+        "time": "08:40",
+        "timestamp": 1756165200,
+        "timezone": "Asia/Tokyo",
+        "week": null,
+        "status": {
+          "long": "Not Started",
+          "short": "NS"
+        },
+        "country": {
+          "id": 1,
+          "name": "USA",
+          "code": "US",
+          "flag": "https://media.api-sports.io/flags/us.svg"
+        },
+        "league": {
+          "id": 1,
+          "name": "MLB",
+          "type": "League",
+          "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+          "season": 2025
+        },
+        "teams": {
+          "home": {
+            "id": 7,
+            "name": "Chicago White Sox",
+            "logo": "https://media.api-sports.io/baseball/teams/7.png"
+          },
+          "away": {
+            "id": 16,
+            "name": "Kansas City Royals",
+            "logo": "https://media.api-sports.io/baseball/teams/16.png"
+          }
+        },
+        "scores": {
+          "home": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          },
+          "away": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          }
+        }
+      }
+    },
+    {
+      "id": 165256,
+      "home": "Milwaukee Brewers",
+      "away": "Arizona Diamondbacks",
+      "home_jp": "ブリュワーズ",
+      "away_jp": "ダイヤモンドバックス",
+      "datetime": "2025-08-26T08:40:00+09:00 08:40",
+      "league": "MLB",
+      "status": "Not Started",
+      "raw": {
+        "id": 165256,
+        "date": "2025-08-26T08:40:00+09:00",
+        "time": "08:40",
+        "timestamp": 1756165200,
+        "timezone": "Asia/Tokyo",
+        "week": null,
+        "status": {
+          "long": "Not Started",
+          "short": "NS"
+        },
+        "country": {
+          "id": 1,
+          "name": "USA",
+          "code": "US",
+          "flag": "https://media.api-sports.io/flags/us.svg"
+        },
+        "league": {
+          "id": 1,
+          "name": "MLB",
+          "type": "League",
+          "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+          "season": 2025
+        },
+        "teams": {
+          "home": {
+            "id": 20,
+            "name": "Milwaukee Brewers",
+            "logo": "https://media.api-sports.io/baseball/teams/20.png"
+          },
+          "away": {
+            "id": 2,
+            "name": "Arizona Diamondbacks",
+            "logo": "https://media.api-sports.io/baseball/teams/2.png"
+          }
+        },
+        "scores": {
+          "home": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          },
+          "away": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          }
+        }
+      }
+    },
+    {
+      "id": 165257,
+      "home": "St.Louis Cardinals",
+      "away": "Pittsburgh Pirates",
+      "home_jp": "カージナルス",
+      "away_jp": "パイレーツ",
+      "datetime": "2025-08-26T08:45:00+09:00 08:45",
+      "league": "MLB",
+      "status": "Not Started",
+      "raw": {
+        "id": 165257,
+        "date": "2025-08-26T08:45:00+09:00",
+        "time": "08:45",
+        "timestamp": 1756165500,
+        "timezone": "Asia/Tokyo",
+        "week": null,
+        "status": {
+          "long": "Not Started",
+          "short": "NS"
+        },
+        "country": {
+          "id": 1,
+          "name": "USA",
+          "code": "US",
+          "flag": "https://media.api-sports.io/flags/us.svg"
+        },
+        "league": {
+          "id": 1,
+          "name": "MLB",
+          "type": "League",
+          "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+          "season": 2025
+        },
+        "teams": {
+          "home": {
+            "id": 33,
+            "name": "St.Louis Cardinals",
+            "logo": "https://media.api-sports.io/baseball/teams/33.png"
+          },
+          "away": {
+            "id": 28,
+            "name": "Pittsburgh Pirates",
+            "logo": "https://media.api-sports.io/baseball/teams/28.png"
+          }
+        },
+        "scores": {
+          "home": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          },
+          "away": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          }
+        }
+      }
+    },
+    {
+      "id": 165252,
+      "home": "Texas Rangers",
+      "away": "Los Angeles Angels",
+      "home_jp": "レンジャーズ",
+      "away_jp": "エンゼルス",
+      "datetime": "2025-08-26T09:05:00+09:00 09:05",
+      "league": "MLB",
+      "status": "Not Started",
+      "raw": {
+        "id": 165252,
+        "date": "2025-08-26T09:05:00+09:00",
+        "time": "09:05",
+        "timestamp": 1756166700,
+        "timezone": "Asia/Tokyo",
+        "week": null,
+        "status": {
+          "long": "Not Started",
+          "short": "NS"
+        },
+        "country": {
+          "id": 1,
+          "name": "USA",
+          "code": "US",
+          "flag": "https://media.api-sports.io/flags/us.svg"
+        },
+        "league": {
+          "id": 1,
+          "name": "MLB",
+          "type": "League",
+          "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+          "season": 2025
+        },
+        "teams": {
+          "home": {
+            "id": 35,
+            "name": "Texas Rangers",
+            "logo": "https://media.api-sports.io/baseball/teams/35.png"
+          },
+          "away": {
+            "id": 17,
+            "name": "Los Angeles Angels",
+            "logo": "https://media.api-sports.io/baseball/teams/17.png"
+          }
+        },
+        "scores": {
+          "home": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          },
+          "away": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          }
+        }
+      }
+    },
+    {
+      "id": 165251,
+      "home": "Seattle Mariners",
+      "away": "San Diego Padres",
+      "home_jp": "マリナーズ",
+      "away_jp": "パドレス",
+      "datetime": "2025-08-26T10:40:00+09:00 10:40",
+      "league": "MLB",
+      "status": "Not Started",
+      "raw": {
+        "id": 165251,
+        "date": "2025-08-26T10:40:00+09:00",
+        "time": "10:40",
+        "timestamp": 1756172400,
+        "timezone": "Asia/Tokyo",
+        "week": null,
+        "status": {
+          "long": "Not Started",
+          "short": "NS"
+        },
+        "country": {
+          "id": 1,
+          "name": "USA",
+          "code": "US",
+          "flag": "https://media.api-sports.io/flags/us.svg"
+        },
+        "league": {
+          "id": 1,
+          "name": "MLB",
+          "type": "League",
+          "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+          "season": 2025
+        },
+        "teams": {
+          "home": {
+            "id": 32,
+            "name": "Seattle Mariners",
+            "logo": "https://media.api-sports.io/baseball/teams/32.png"
+          },
+          "away": {
+            "id": 30,
+            "name": "San Diego Padres",
+            "logo": "https://media.api-sports.io/baseball/teams/30.png"
+          }
+        },
+        "scores": {
+          "home": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          },
+          "away": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          }
+        }
+      }
+    },
+    {
+      "id": 165250,
+      "home": "Athletics",
+      "away": "Detroit Tigers",
+      "home_jp": null,
+      "away_jp": "タイガース",
+      "datetime": "2025-08-26T11:05:00+09:00 11:05",
+      "league": "MLB",
+      "status": "Not Started",
+      "raw": {
+        "id": 165250,
+        "date": "2025-08-26T11:05:00+09:00",
+        "time": "11:05",
+        "timestamp": 1756173900,
+        "timezone": "Asia/Tokyo",
+        "week": null,
+        "status": {
+          "long": "Not Started",
+          "short": "NS"
+        },
+        "country": {
+          "id": 1,
+          "name": "USA",
+          "code": "US",
+          "flag": "https://media.api-sports.io/flags/us.svg"
+        },
+        "league": {
+          "id": 1,
+          "name": "MLB",
+          "type": "League",
+          "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+          "season": 2025
+        },
+        "teams": {
+          "home": {
+            "id": 963,
+            "name": "Athletics",
+            "logo": "https://media.api-sports.io/baseball/teams/963.png"
+          },
+          "away": {
+            "id": 12,
+            "name": "Detroit Tigers",
+            "logo": "https://media.api-sports.io/baseball/teams/12.png"
+          }
+        },
+        "scores": {
+          "home": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          },
+          "away": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          }
+        }
+      }
+    },
+    {
+      "id": 165248,
+      "home": "Los Angeles Dodgers",
+      "away": "Cincinnati Reds",
+      "home_jp": "ドジャース",
+      "away_jp": "レッズ",
+      "datetime": "2025-08-26T11:10:00+09:00 11:10",
+      "league": "MLB",
+      "status": "Not Started",
+      "raw": {
+        "id": 165248,
+        "date": "2025-08-26T11:10:00+09:00",
+        "time": "11:10",
+        "timestamp": 1756174200,
+        "timezone": "Asia/Tokyo",
+        "week": null,
+        "status": {
+          "long": "Not Started",
+          "short": "NS"
+        },
+        "country": {
+          "id": 1,
+          "name": "USA",
+          "code": "US",
+          "flag": "https://media.api-sports.io/flags/us.svg"
+        },
+        "league": {
+          "id": 1,
+          "name": "MLB",
+          "type": "League",
+          "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+          "season": 2025
+        },
+        "teams": {
+          "home": {
+            "id": 18,
+            "name": "Los Angeles Dodgers",
+            "logo": "https://media.api-sports.io/baseball/teams/18.png"
+          },
+          "away": {
+            "id": 8,
+            "name": "Cincinnati Reds",
+            "logo": "https://media.api-sports.io/baseball/teams/8.png"
+          }
+        },
+        "scores": {
+          "home": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          },
+          "away": {
+            "hits": null,
+            "errors": null,
+            "innings": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null,
+              "6": null,
+              "7": null,
+              "8": null,
+              "9": null,
+              "extra": null
+            },
+            "total": null
+          }
+        }
+      }
+    }
+  ]
+}

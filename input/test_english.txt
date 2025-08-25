@@ -1,0 +1,6 @@
+[MLB]
+Colorado Rockies
+Pittsburgh Pirates<0.1>
+
+St.Louis Cardinals<0.2>
+Tampa Bay Rays

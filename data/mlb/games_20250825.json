@@ -1,7 +1,7 @@
 {
   "sport": "mlb",
   "fetch_date": "2025-08-25",
-  "fetch_time": "2025-08-25T17:40:28.715830",
+  "fetch_time": "2025-08-25T22:38:04.996014",
   "timezone": "Asia/Tokyo",
   "games": [
     {
@@ -92,7 +92,7 @@
       "home": "Tampa Bay Rays",
       "away": "St.Louis Cardinals",
       "home_jp": "レイズ",
-      "away_jp": null,
+      "away_jp": "カージナルス",
       "datetime": "2025-08-25T01:10:00+09:00 01:10",
       "league": "MLB",
       "status": "Finished",
