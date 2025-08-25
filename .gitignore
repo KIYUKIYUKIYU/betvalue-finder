@@ -36,3 +36,4 @@ tmp_*
 *.png
 dirlist.txt
 get-pip.py
+.env
