@@ -1,201 +1,227 @@
-📋 現状整理とREADME更新
-これまでの議論のまとめ
-1. 問題の発見と解決
-
-問題: Pinnacleのデータ形式が想定と異なる
-
-想定: "handicap": -1.0
-実際: "value": "Home -1", "odd": "2.81"
-
-
-解決: parse_handicap_values関数を両形式対応に修正
-
-2. 補間システムの設計
-
-0の計算: ±1.0のペアから中間値として算出（ホーム視点で統一）
-0.05刻み: 0と実データ間を線形補間
-データ不足時: 優先順位（±0.5 → ±1.0 → 最小ペア）
-
-3. 変換表の拡張性
-
-パターン確認: 全81エントリが完全に一貫性あり
-無限拡張可能: バスケの大きな値（10.5、15.5）にも対応
-
-4. 設計方針
-
-内部処理: すべてピナクル値（数値）で統一
-キャッシュ不要: 毎回新しいオッズで計算
-精度管理: 小数点4桁で統一
-
-
-📝 README_PROJECT.md 更新版
-markdown# 📑 完全版 README_PROJECT.md (2025-08-23更新)
-# BET_HUNTER / betvalue-finder
-
-## 🔄 更新履歴
-- 2025-08-23: Pinnacleデータ形式対応、補間システム設計追加
+# BET_HUNTER / betvalue-finder — 統合指示書（WSL2統一版）
 
 ## 1) 前提・環境
-- OS: Windows 11
-- 実行環境: `cmd.exe` 固定（PowerShell不可）
-- 仮想環境: `venv`
-- 言語: Python 3.13
-- プロジェクトパス: `C:\Users\yfuku\Desktop\betvalue-finder`
-- APIキー: `API_SPORTS_KEY`（環境変数）
+
+- **OS**: Windows 11 + WSL2 (Ubuntu)
+- **開発環境**: WSL2内で全作業を実施
+- **シェル**: bash（WSL2内）
+- **Python**: 3.12
+- **仮想環境**: venv
+- **プロジェクトパス**: `~/betvalue-finder` (WSL2内)
+- **APIキー（環境変数）**: 
+  - `API_SPORTS_KEY`（API-SPORTS Baseball v1 用）
+  - `.bashrc`に設定済み
+- **タイムゾーン**: Asia/Tokyo（JST）
+- **共通ルール**: 「📜【永久保存版】AIアシスタントへのプロジェクト共通指示書」を厳守
+
+### 環境設定済み項目
+- GitHubトークン: `GITHUB_TOKEN`（.bashrcに設定済み）
+- エイリアス: `gitpush`でコミット＆プッシュ可能
 
 ---
 
-## 2) ディレクトリ構造
+## 2) システム目的（要約）
+
+Pinnacle オッズを基準に、日本式ハンデ（配当固定 1.9）の期待値を算出し、個別ラインの有利／不利を自動判定
+
+**対象競技**: MLB / サッカー / NBAに汎用化
+
+**評価フロー**:
+- マージン除去（各ラインの公正化）
+- 線形補間（0.05刻み・変換表に準拠）
+- 公正オッズ→期待値（1.9固定）
+- verdict 付与：clear_plus / plus / fair / minus（閾値は合意済み値）
+
+---
+
+## 3) ディレクトリ構造
+
+```
 betvalue-finder/
-├─ README_PROJECT.md          ← このドキュメント
-├─ README_DEV.md              ← 開発ログ（新規）
-│
+├─ README_PROJECT.md              # 本ドキュメント
 ├─ app/
-│  ├─ main.py                 # FastAPI エントリポイント
-│  ├─ converter.py            # 日本式⇔ピナクル変換
-│  └─ static/                 # UI用静的ファイル
-│
-├─ converter/
-│  ├─ baseball_rules.py       # EV計算、補間ロジック
-│  ├─ paste_parser.py         # 貼り付けテキストパーサー
-│  ├─ team_names.py           # チーム名正規化（新規）
-│  └─ handicap_interpolator.py # 補間モジュール（計画中）
-│
-├─ debug/                      # デバッグ用スクリプト（新規）
-│  ├─ test_odds_debug.py
-│  ├─ test_pinnacle_details.py
-│  └─ verify_conversion_pattern.py
-│
-├─ data/                       # 取得した生データ
-├─ scripts/                    # CLIスクリプト類
-└─ 「## 1. 変換表（ピナクル → 日本式）.txt」
+│  ├─ main.py                    # FastAPI: /map, /evaluate, /ingest
+│  └─ converter.py               # 日本式⇄ピナクル変換
+├─ converter/                    # 変換・EV計算ロジック
+│  └─ baseball_rules.py         # MLB用EVルール
+├─ game_manager/                 # 【新】試合管理モジュール
+│  ├─ base.py                   # 基底クラス
+│  └─ mlb.py                    # MLB実装
+├─ data/
+│  ├─ mlb/
+│  │  ├─ games_YYYYMMDD.json   # 試合データ
+│  │  └─ odds_YYYYMMDD.json    # オッズデータ
+│  └─ soccer/
+│      └─ odds_YYYYMMDD.json    # サッカーオッズ
+├─ input/                        # 貼り付けテキスト置き場
+├─ scripts/
+│  ├─ update_games.py           # 【新】毎日の試合更新
+│  ├─ process_paste_new.py      # 【新】新貼り付け処理
+│  ├─ mlb_from_paste_compare.py # 従来の貼り付け処理
+│  ├─ dump_spreads_csv.py       # CSVダンプ
+│  └─ output/                   # 出力ファイル
+├─ docs/                         # ドキュメント類
+│  └─ HANDOVER_YYYYMMDD.md     # 引き継ぎ書
+├─ bet_snapshots.sqlite3
+├─ 「## 1. 変換表（ピナクル → 日本式）.txt」
+└─ 「📜【永久保存版】AIアシスタントへのプロジェクト共通指示書.txt」
+```
 
 ---
 
-## 3) 技術的発見事項（2025-08-23）
+## 4) セットアップ手順（WSL2）
 
-### 3.1 Pinnacleデータ形式
-```json
-// 実際のPinnacle形式
-{
-  "value": "Home -1",  // ホーム視点のライン
-  "odd": "2.81"        // オッズ
-}
-3.2 補間システム設計
-ライン0の計算方法
-python# ±1.0のペアから0を計算（ホーム視点統一）
-if -1.0 and +1.0 exist:
-    prob_home_at_minus1 = fair_prob(odds[-1.0])
-    prob_home_at_plus1 = fair_prob(odds[+1.0])
-    prob_home_at_0 = (prob_home_at_minus1 + prob_home_at_plus1) / 2
-0.05刻みの補間
+### 初回セットアップ
 
-利用可能ライン: [1.0, 1.5, 2.0, 2.5, 3.0]
-ライン0を計算（上記方法）
-0.05は0と1.0の間を線形補間
+```bash
+# 1. WSL2を起動（Windowsターミナルなどから）
+wsl
 
-データ不足時の優先順位
+# 2. プロジェクトをクローン
+cd ~
+git clone https://github.com/KIYUKIYUKIYU/betvalue-finder.git
+cd betvalue-finder
 
-±0.5のペア（最も信頼性高い）
-±1.0のペア
-最小の対称ペア
-エラーまたは最小ライン使用
+# 3. Python仮想環境を作成
+python3 -m venv venv
+source venv/bin/activate
 
-3.3 変換表の拡張性
-パターン（確認済み）:
-X.00 → X
-X.05 → X.1
-X.10 → X.2
-...
-X.50 → X半
-X.55 → X半1
-...
-X.95 → X半9
+# 4. 依存パッケージをインストール
+pip install -r requirements.txt
 
-このパターンで無限拡張可能（バスケの10.5 → "10半"）
+# 5. 環境変数を設定（.bashrcに追加）
+echo 'export API_SPORTS_KEY="あなたのAPIキー"' >> ~/.bashrc
+echo 'export GITHUB_TOKEN="あなたのGitHubトークン"' >> ~/.bashrc
+source ~/.bashrc
 
-4) 設計方針
-内部処理
+# 6. Gitエイリアスを設定（オプション）
+echo 'alias gitpush="git add . && git commit -m \"Update\" && git push"' >> ~/.bashrc
+source ~/.bashrc
+```
 
-数値統一: 内部計算はすべてピナクル値（float）
-ホーム視点: すべてのラインはホームチーム視点で統一
-精度: 小数点4桁（PRECISION = 4）
+### 日常の作業開始
 
-キャッシュ戦略
+```bash
+# WSL2を起動
+wsl
 
-不要: 毎回新しいオッズで計算するため
+# プロジェクトに移動
+cd ~/betvalue-finder
 
-エラー処理
+# 仮想環境を有効化
+source venv/bin/activate
 
-欠損ライン: 線形補間で補完
-精度問題: round(value, 4)で統一
+# 最新版を取得
+git pull
+```
 
+---
 
-5) parse_handicap_values関数の修正内容
-修正前（動作しない）
-python# "handicap"フィールドを探す（存在しない）
-if "handicap" in v and v["handicap"] is not None:
-修正後（両形式対応）
-python# 方式1: 他のブックメーカー形式
-if "handicap" in v:
-    # 処理...
+## 5) MLBパイプライン（GameManager版）
 
-# 方式2: Pinnacle形式
-elif "value" in v and "odd" in v:
-    # "Home -1" をパース
-    match = re.search(r'(Home|Away)\s*([+-]?\d+(?:\.\d+)?)', v["value"])
+### 5.1 試合データ更新（毎日実行）
 
-6) 次の実装計画
-HandicapInterpolatorモジュール
-pythonconverter/handicap_interpolator.py
-- ライン0の計算
-- 0.05刻み補間
-- スポーツ非依存設計
-- エラーハンドリング
-実装優先順位
+```bash
+# 今日の試合を取得
+python scripts/update_games.py --sport mlb
 
-parse_handicap_values修正 → 本番適用
-HandicapInterpolatorモジュール作成
-全体統合テスト
-サッカー、バスケへの拡張
+# 特定日の試合を取得
+python scripts/update_games.py --sport mlb --date 2025-08-25
+```
 
+### 5.2 貼り付け処理＆EV計算
 
-7) コマンド集（Windows cmd.exe）
-サーバー起動
-doscd C:\Users\yfuku\Desktop\betvalue-finder
-venv\Scripts\activate
-set API_SPORTS_KEY=あなたのAPIキー
-python -m uvicorn app.main:app --port 8002 --reload
-デバッグ実行
-doscd C:\Users\yfuku\Desktop\betvalue-finder
-venv\Scripts\activate
-python debug\test_pinnacle_details.py
+```bash
+# 1. 貼り付けファイルを作成
+nano input/paste_20250825.txt
 
-8) 確認済み事項
+# 内容例：
+# ヤンキース<0.1>
+# レッドソックス
+#
+# カージナルス
+# ブルージェイズ<1.2>
 
-✅ Pinnacle ID = 4（正しい）
-✅ チーム名正規化システム動作
-✅ タイムゾーン問題解決
-✅ 変換表パターンの一貫性
-✅ 補間ロジックの動作確認
+# 2. 処理実行（レーキバック1.5%）
+python scripts/process_paste_new.py \
+  input/paste_20250825.txt \
+  --date 2025-08-25 \
+  --rakeback 0.015
+```
 
+### 5.3 全スプレッドダンプ（分析用）
 
-9) 注意事項
+```bash
+python scripts/dump_spreads_csv.py --sport mlb
+# 出力: scripts/output/mlb_spreads_dump_YYYYMMDD.csv
+```
 
-常に README_PROJECT.md が唯一の正
-新仕様は必ず 合意 → README追記 → コード実装 の順
-実行コマンドは必ず Windows cmd.exe 向けに記載
-推測禁止、事実のみ記載
+---
 
+## 6) レーキバック仕様
 
-### ファイル保存手順
+- **方式**: Turnoverのみ（賭け金に対する返還）
+- **範囲**: 0〜3%
+- **刻み**: 0.5%単位（0.005刻み）
+- **指定方法**: `--rakeback 0.015`（1.5%の場合）
+- **計算式**: 
+  - `EV% = (p * O - 1 + r) * 100`
+  - `実効配当 O_eff = O + r/p`
 
-```dos
-:: 1. バックアップ作成
-cd C:\Users\yfuku\Desktop\betvalue-finder
-copy README_PROJECT.md README_PROJECT_backup_20250823.md
+---
 
-:: 2. 新しいREADMEを保存
-notepad README_PROJECT.md
-:: 上記の内容を貼り付けて保存（UTF-8）
-これでプロジェクトの現状が正確に文書化されました。次のステップに進む準備ができています。
+## 7) 既知の問題と対応
+
+### チーム名マッチング問題
+- **問題**: "St.Louis Cardinals" vs "St. Louis Cardinals"
+- **対応**: game_manager/mlb.pyで正規化処理実装予定
+
+---
+
+## 8) コマンド集（コピペ用）
+
+```bash
+# 環境準備
+cd ~/betvalue-finder && source venv/bin/activate
+
+# 試合更新（毎日）
+python scripts/update_games.py --sport mlb
+
+# 貼り付け処理
+python scripts/process_paste_new.py input/paste_$(date +%Y%m%d).txt
+
+# API起動（開発用）
+python -m uvicorn app.main:app --reload --port 8001
+
+# Git更新
+git pull && git status
+
+# Git保存（エイリアス使用）
+gitpush
+```
+
+---
+
+## 9) 今後のフェーズ
+
+- **フェーズ1**: ✅ GameManager実装完了
+- **フェーズ2**: チーム名正規化＆EV計算完全実装（進行中）
+- **フェーズ3**: FastAPI完全統合
+- **フェーズ4**: Webサービス化（GCP予定）
+- **フェーズ5**: 販売形態検討
+
+---
+
+## 10) API使用状況
+
+- **API-Sports残量**: 約75,000/100,000（2025-08-25時点）
+- **1日の使用目安**: 試合取得50回 + オッズ取得100回程度
+
+---
+
+## 11) 注意事項
+
+- 常に **README_PROJECT.md が唯一の正**
+- 新仕様は必ず **合意 → README追記 → コード実装** の順
+- WSL2内で全作業を完結（Windowsファイルシステムとの直接操作は避ける）
+- GitHub更新は`gitpush`エイリアスで簡単実行可能
