@@ -48,10 +48,6 @@ class MLBGameManager(GameManager):
         "ダイヤモンドバックス": "Arizona Diamondbacks",
         "ロッキーズ": "Colorado Rockies",
         "ナショナルズ": "Washington Nationals",
-        # 略称対応
-        "Wソックス": "Chicago White Sox",
-        "Rソックス": "Boston Red Sox",
-        "Dバックス": "Arizona Diamondbacks",
         "マーリンズ": "Miami Marlins",
     }
     

@@ -79,9 +79,6 @@ def jp_to_pinnacle(jp: str) -> float:
     日本式 → ピナクル値（0.05刻み）。未定義は ValueError。
     """
     t = normalize_jp_token(jp)
-    # 1.0の特別処理
-    if t == "1.0":
-        return 0.5
     if t in _JP2PINN:
         return _JP2PINN[t]
     # "1.20"のような小数2桁も許容 → "1.2"へ丸め

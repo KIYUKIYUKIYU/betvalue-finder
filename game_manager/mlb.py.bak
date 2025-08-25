@@ -28,7 +28,7 @@ class MLBGameManager(GameManager):
         "マリナーズ": "Seattle Mariners",
         "レンジャーズ": "Texas Rangers",
         "アストロズ": "Houston Astros",
-        "アスレチックス": "Athletics",
+        "アスレチックス": "Oakland Athletics",
         "レイズ": "Tampa Bay Rays",
         "ブルージェイズ": "Toronto Blue Jays",
         "オリオールズ": "Baltimore Orioles",
@@ -48,10 +48,6 @@ class MLBGameManager(GameManager):
         "ダイヤモンドバックス": "Arizona Diamondbacks",
         "ロッキーズ": "Colorado Rockies",
         "ナショナルズ": "Washington Nationals",
-        # 略称対応
-        "Wソックス": "Chicago White Sox",
-        "Rソックス": "Boston Red Sox",
-        "Dバックス": "Arizona Diamondbacks",
         "マーリンズ": "Miami Marlins",
     }
     
@@ -180,65 +176,3 @@ class MLBGameManager(GameManager):
         except Exception as e:
             print(f"❌ Failed to fetch odds for game {game_id}: {e}")
             return None
-
-    def match_teams(self, teams: List[str]) -> Optional[Dict]:
-        """チーム名から試合を検索"""
-        from datetime import datetime
-        import json
-        import os
-        
-        # 今日の日付
-        today = datetime.now().strftime("%Y%m%d")
-        data_file = f"data/baseball_odds_{today}.json"
-        
-        # データファイルが存在しない場合はNone
-        if not os.path.exists(data_file):
-            return None
-            
-        try:
-            with open(data_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                
-            # データ構造の判定
-            if isinstance(data, list):
-                games = data
-            elif isinstance(data, dict) and 'response' in data:
-                games = data['response']
-            else:
-                return None
-            
-            # 日本語名を英語名に変換
-            team_a_jp = teams[0]
-            team_b_jp = teams[1]
-            team_a_en = self.TEAM_MAPPING.get(team_a_jp, team_a_jp)
-            team_b_en = self.TEAM_MAPPING.get(team_b_jp, team_b_jp)
-            
-            # 試合を検索
-            for game in games:
-                if 'game' in game and 'teams' in game['game']:
-                    home = game['game']['teams'].get('home', {}).get('name', '')
-                    away = game['game']['teams'].get('away', {}).get('name', '')
-                    game_id = game['game'].get('id')
-                elif 'home' in game and 'away' in game:
-                    home = game.get('home', {}).get('name', '')
-                    away = game.get('away', {}).get('name', '')
-                    game_id = game.get('id')
-                else:
-                    continue
-                
-                # チーム名でマッチング（部分一致も考慮）
-                if (team_a_en in home and team_b_en in away) or \
-                   (team_b_en in home and team_a_en in away) or \
-                   (team_a_en in away and team_b_en in home) or \
-                   (team_b_en in away and team_a_en in home):
-                    return {
-                        'id': game_id,
-                        'home': home,
-                        'away': away
-                    }
-                    
-        except Exception as e:
-            print(f"Error in match_teams: {e}")
-            return None
-        
-        return None
