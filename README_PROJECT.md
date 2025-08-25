@@ -237,3 +237,42 @@ gitpush
 - ユーザーはURLをコピペするだけ
 - AIは最新のコードを確実に取得
 - ローカルの変更も反映される（push済みなら）
+
+---
+
+## 📅 2025年8月25日 更新
+
+### ✅ リアルタイムEV評価システム完成
+
+#### 実装内容
+1. **モジュール化完了**
+   - `converter/odds_processor.py` - API-Sports形式のオッズ処理
+   - `converter/ev_evaluator.py` - EV計算とverdict判定
+   - `app/main.py` - GameManager統合版
+
+2. **リアルタイム対応**
+   - CSVベースから完全移行
+   - API-Sportsから最新オッズ取得
+   - GameManagerで試合管理
+
+3. **API-Sports形式対応**
+   - "Home -1.5" 形式のオッズに対応
+   - 正規表現でハンデ値抽出
+
+#### 使用方法
+
+```bash
+# サーバー起動
+cd ~/betvalue-finder
+source venv/bin/activate
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8002
+
+# API使用例
+curl -X POST http://localhost:8002/analyze_paste \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Yankees<1半>\nRed Sox",
+    "sport": "mlb",
+    "rakeback": 0.015,
+    "jp_odds": 1.9
+  }'

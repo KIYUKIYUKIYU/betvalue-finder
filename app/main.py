@@ -1,6 +1,9 @@
-# app/main.py
-# BetValue Finder API - MLB/サッカー対応版
-# 日本式ハンデからピナクルオッズを取得して期待値を計算
+# -*- coding: utf-8 -*-
+"""
+app/main.py
+BetValue Finder API - MLB/サッカー対応版
+モジュール化されたオッズ処理とEV評価を使用
+"""
 
 from __future__ import annotations
 from fastapi import FastAPI, HTTPException
@@ -8,20 +11,24 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, List, Dict, Tuple, Any
+from typing import Optional, List, Dict, Any
 import os
 import sys
 import json
-import requests
 import datetime as dt
-from collections import defaultdict
 import re
 import logging
 
 # プロジェクトルートをパスに追加
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# 既存のconverterモジュール
 from app.converter import jp_to_pinnacle, pinnacle_to_jp, try_parse_jp
+
+# 新しいモジュール
+from converter.odds_processor import OddsProcessor
+from converter.ev_evaluator import EVEvaluator
+from game_manager.mlb import MLBGameManager
 
 # ロガー設定
 logging.basicConfig(
@@ -29,7 +36,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-app = FastAPI(title="BetValue Finder API", version="1.0.0")
+app = FastAPI(title="BetValue Finder API", version="2.0.0")
 
 # CORS設定
 app.add_middleware(
@@ -88,9 +95,24 @@ class GameEvaluation(BaseModel):
     fair_odds: Optional[float] = None
     ev_pct: Optional[float] = None
     ev_pct_rake: Optional[float] = None
+    eff_odds: Optional[float] = None
     verdict: Optional[str] = None
     error: Optional[str] = None
     error_code: Optional[str] = None
+
+class EvaluateOddsRequest(BaseModel):
+    game_id: str
+    jp_line: str
+    side: str = "home"  # home/away
+    rakeback: float = 0.0
+    jp_odds: float = 1.9
+
+class BestLinesRequest(BaseModel):
+    game_id: str
+    top_n: int = 3
+    min_ev: Optional[float] = None
+    rakeback: float = 0.0
+    jp_odds: float = 1.9
 
 # --- ユーティリティ ---
 def get_api_key() -> str:
@@ -181,31 +203,17 @@ def parse_paste_text(text: str, sport: str = "auto") -> List[Dict]:
                 ok, pinn = try_parse_jp(current_game["line_a"])
                 if ok:
                     current_game["fav_line_pinnacle"] = pinn
+                    current_game["jp_line"] = current_game["line_a"]
             elif "line_b" in current_game:
                 ok, pinn = try_parse_jp(current_game["line_b"])
                 if ok:
                     current_game["fav_line_pinnacle"] = pinn
+                    current_game["jp_line"] = current_game["line_b"]
                     
             games.append(current_game)
             current_game = {}
     
     return games
-
-def calculate_ev(fair_prob: float, jp_odds: float, rakeback: float = 0.0) -> float:
-    """期待値を計算"""
-    ev = fair_prob * jp_odds - 1.0 + rakeback
-    return ev * 100.0
-
-def decide_verdict(ev_pct: float) -> str:
-    """判定を決定"""
-    if ev_pct >= 5.0:
-        return "clear_plus"
-    elif ev_pct >= 0.0:
-        return "plus"
-    elif ev_pct >= -3.0:
-        return "fair"
-    else:
-        return "minus"
 
 # --- エンドポイント ---
 
@@ -221,8 +229,8 @@ async def root():
     <html>
         <head><title>BetValue Finder</title></head>
         <body>
-            <h1>BetValue Finder API</h1>
-            <p>API is running. Please ensure index.html exists in /app/static/</p>
+            <h1>BetValue Finder API v2.0</h1>
+            <p>API is running with modularized odds processing and EV evaluation.</p>
             <p><a href="/docs">API Documentation</a></p>
         </body>
     </html>
@@ -248,13 +256,21 @@ async def map_endpoint(req: MapRequest):
 
 @app.post("/analyze_paste", response_model=List[GameEvaluation])
 async def analyze_paste_endpoint(req: AnalyzePasteRequest):
-    """貼り付けテキストを解析してEV計算"""
+    """貼り付けテキストを解析してEV計算（GameManager統合版）"""
     try:
+        # APIキー取得
+        api_key = get_api_key()
+        
         # テキストをパース
         games = parse_paste_text(req.text, req.sport)
         
         if not games:
             raise HTTPException(status_code=400, detail="試合データが見つかりません")
+        
+        # GameManagerとモジュール初期化
+        mlb_manager = MLBGameManager(api_key)
+        odds_processor = OddsProcessor()
+        ev_evaluator = EVEvaluator(jp_odds=req.jp_odds, rakeback=req.rakeback)
         
         results = []
         
@@ -267,36 +283,66 @@ async def analyze_paste_endpoint(req: AnalyzePasteRequest):
                 team_b_jp=game.get("team_b_jp", game["team_b"])
             )
             
+            # 試合を検索
+            matched_game = mlb_manager.match_teams([game["team_a"], game["team_b"]])
+            
+            if not matched_game:
+                eval_result.error = "試合が見つかりません"
+                eval_result.error_code = "GAME_NOT_FOUND"
+                results.append(eval_result)
+                continue
+            
             # フェイバリット側の処理
             if game.get("fav_side") and game.get("fav_line_pinnacle"):
                 if game["fav_side"] == "a":
                     eval_result.fav_team = game["team_a"]
                     eval_result.fav_team_jp = game["team_a_jp"]
-                    eval_result.jp_line = game.get("line_a")
+                    eval_result.jp_line = game.get("jp_line")
+                    side = "home" if matched_game["home"] == eval_result.fav_team else "away"
                 else:
                     eval_result.fav_team = game["team_b"]
                     eval_result.fav_team_jp = game["team_b_jp"]
-                    eval_result.jp_line = game.get("line_b")
+                    eval_result.jp_line = game.get("jp_line")
+                    side = "home" if matched_game["home"] == eval_result.fav_team else "away"
                 
                 eval_result.pinnacle_line = game["fav_line_pinnacle"]
                 
-                # ここで本来はAPIからオッズを取得して計算するが、
-                # 簡単のため仮の値を設定
-                # TODO: 実際のAPI接続とオッズ取得を実装
+                # オッズを取得
+                odds_data = mlb_manager.fetch_odds(matched_game["id"])
                 
-                # 仮の公正勝率（50-60%の間でランダム）
-                import random
-                fair_prob = 0.5 + random.random() * 0.1
-                eval_result.fair_prob = round(fair_prob, 3)
-                eval_result.fair_odds = round(1.0 / fair_prob, 3) if fair_prob > 0 else None
+                if not odds_data:
+                    eval_result.error = "オッズが取得できません"
+                    eval_result.error_code = "NO_ODDS"
+                    results.append(eval_result)
+                    continue
                 
-                # EV計算
-                ev_plain = calculate_ev(fair_prob, req.jp_odds, 0)
-                ev_rake = calculate_ev(fair_prob, req.jp_odds, req.rakeback)
+                # オッズを処理
+                line_data = odds_processor.prepare_line_data(odds_data)
                 
-                eval_result.ev_pct = round(ev_plain, 2)
-                eval_result.ev_pct_rake = round(ev_rake, 2)
-                eval_result.verdict = decide_verdict(ev_rake)
+                if not line_data:
+                    eval_result.error = "ハンデオッズが見つかりません"
+                    eval_result.error_code = "NO_HANDICAP_ODDS"
+                    results.append(eval_result)
+                    continue
+                
+                # EV評価
+                evaluation = ev_evaluator.evaluate_single_line(
+                    line_data,
+                    eval_result.pinnacle_line,
+                    side
+                )
+                
+                # 結果を設定
+                eval_result.fair_prob = evaluation.get("fair_prob")
+                eval_result.fair_odds = evaluation.get("fair_odds")
+                eval_result.ev_pct = evaluation.get("ev_pct")
+                eval_result.ev_pct_rake = evaluation.get("ev_pct_rake")
+                eval_result.eff_odds = evaluation.get("eff_odds")
+                eval_result.verdict = evaluation.get("verdict")
+                
+                if evaluation.get("error"):
+                    eval_result.error = evaluation["error"]
+                    eval_result.error_code = "EVALUATION_ERROR"
             else:
                 eval_result.error = "ハンデが指定されていません"
                 eval_result.error_code = "NO_HANDICAP"
@@ -311,10 +357,100 @@ async def analyze_paste_endpoint(req: AnalyzePasteRequest):
         logging.error(f"Error in analyze_paste: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/evaluate_odds")
+async def evaluate_odds_endpoint(req: EvaluateOddsRequest):
+    """特定ゲーム・ラインのEV評価"""
+    try:
+        api_key = get_api_key()
+        
+        # GameManagerとモジュール初期化
+        mlb_manager = MLBGameManager(api_key)
+        odds_processor = OddsProcessor()
+        ev_evaluator = EVEvaluator(jp_odds=req.jp_odds, rakeback=req.rakeback)
+        
+        # オッズ取得
+        odds_data = mlb_manager.fetch_odds(req.game_id)
+        
+        if not odds_data:
+            raise HTTPException(status_code=404, detail="Odds not found for this game")
+        
+        # オッズを処理
+        line_data = odds_processor.prepare_line_data(odds_data)
+        
+        if not line_data:
+            raise HTTPException(status_code=404, detail="No handicap odds available")
+        
+        # 日本式をピナクル値に変換
+        ok, pinnacle_value = try_parse_jp(req.jp_line)
+        if not ok:
+            raise HTTPException(status_code=400, detail=f"Invalid JP line: {req.jp_line}")
+        
+        # EV評価
+        result = ev_evaluator.evaluate_single_line(
+            line_data,
+            pinnacle_value,
+            req.side
+        )
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error in evaluate_odds: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/find_best_lines")
+async def find_best_lines_endpoint(req: BestLinesRequest):
+    """特定ゲームの最良ラインを検索"""
+    try:
+        api_key = get_api_key()
+        
+        # GameManagerとモジュール初期化
+        mlb_manager = MLBGameManager(api_key)
+        odds_processor = OddsProcessor()
+        ev_evaluator = EVEvaluator(jp_odds=req.jp_odds, rakeback=req.rakeback)
+        
+        # オッズ取得
+        odds_data = mlb_manager.fetch_odds(req.game_id)
+        
+        if not odds_data:
+            raise HTTPException(status_code=404, detail="Odds not found for this game")
+        
+        # オッズを処理
+        line_data = odds_processor.prepare_line_data(odds_data)
+        
+        if not line_data:
+            raise HTTPException(status_code=404, detail="No handicap odds available")
+        
+        # 最良ラインを検索
+        best_lines = ev_evaluator.find_best_lines(
+            line_data,
+            top_n=req.top_n,
+            min_ev=req.min_ev
+        )
+        
+        return best_lines
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error in find_best_lines: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/health")
 async def health_check():
     """ヘルスチェック"""
-    return {"status": "healthy", "timestamp": dt.datetime.utcnow().isoformat()}
+    return {
+        "status": "healthy",
+        "version": "2.0.0",
+        "modules": {
+            "odds_processor": "OK",
+            "ev_evaluator": "OK",
+            "game_manager": "OK"
+        },
+        "timestamp": dt.datetime.utcnow().isoformat()
+    }
 
 # メイン実行
 if __name__ == "__main__":
