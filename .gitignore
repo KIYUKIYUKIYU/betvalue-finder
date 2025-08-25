@@ -1,0 +1,38 @@
+# 環境変数（絶対に公開しない）
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+venv/
+venv_wsl/
+
+# データ・出力
+data/*.json
+data/*.csv
+scripts/output/*.csv
+*.sqlite3
+*.db
+
+# IDE
+.vscode/
+.idea/
+
+# テスト・デバッグファイル
+test_*.py
+debug_*.py
+*_test.py
+*_debug.py
+
+# 一時ファイル
+tmp/
+*.tmp
+tmp_*
+
+# その他不要なファイル
+*.log
+*.png
+dirlist.txt
+get-pip.py

@@ -1,0 +1,184 @@
+document.addEventListener('DOMContentLoaded', function() {
+    const elements = {
+        pasteInput: document.getElementById('paste-input'),
+        rakebackSelect: document.getElementById('rakeback-select'),
+        effectiveOdds: document.getElementById('effective-odds'),
+        clearBtn: document.getElementById('clear-btn'),
+        analyzeBtn: document.getElementById('analyze-btn'),
+        resultsSection: document.getElementById('results-section'),
+        resultsContainer: document.getElementById('results-container')
+    };
+
+    // レーキバック変更時に実効配当を更新
+    const updateEffectiveOdds = () => {
+        const rakeback = parseFloat(elements.rakebackSelect.value);
+        const baseOdds = 1.90;
+        const effectiveOdds = baseOdds + (rakeback * 2);
+        elements.effectiveOdds.value = effectiveOdds.toFixed(3) + '倍';
+    };
+
+    elements.rakebackSelect.addEventListener('change', updateEffectiveOdds);
+
+    const detectSport = (text) => {
+        // サッカーチーム判定
+        const soccerTeams = [
+            'ユトレヒト', 'エクセルシオール', 'NEC', 'ブレダ', 'ロリアン',
+            'マンチェスター', 'リバプール', 'チェルシー', 'アーセナル',
+            'バルセロナ', 'レアル', 'ユベントス', 'バイエルン'
+        ];
+        
+        // ハンデ形式でも判定
+        const soccerHandicap = text.includes('0半') || text.includes('1半') || text.includes('2半');
+        
+        for (let team of soccerTeams) {
+            if (text.includes(team)) {
+                console.log('Detected soccer team:', team);
+                return 'soccer';
+            }
+        }
+        
+        if (soccerHandicap) {
+            console.log('Detected soccer handicap format');
+            return 'soccer';
+        }
+        
+        console.log('Defaulting to MLB');
+        return 'mlb';
+    };
+
+    elements.clearBtn.addEventListener('click', () => {
+        elements.pasteInput.value = '';
+        elements.resultsSection.classList.add('hidden');
+        elements.resultsContainer.innerHTML = '';
+    });
+
+    elements.analyzeBtn.addEventListener('click', async () => {
+        const text = elements.pasteInput.value.trim();
+        if (!text) {
+            alert('ハンデを入力してください');
+            return;
+        }
+
+        const sport = detectSport(text);
+        const rakeback = parseFloat(elements.rakebackSelect.value);
+
+        console.log('Analyzing with sport:', sport, 'rakeback:', rakeback);
+
+        elements.analyzeBtn.disabled = true;
+        elements.analyzeBtn.textContent = '解析中...';
+        elements.resultsContainer.innerHTML = '<div class="text-center text-slate-400">データを取得中...</div>';
+        elements.resultsSection.classList.remove('hidden');
+
+        try {
+            const response = await fetch('/analyze_paste', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    text: text, 
+                    sport: sport, 
+                    rakeback: rakeback, 
+                    jp_odds: 1.9 
+                })
+            });
+            
+            console.log('Response status:', response.status);
+            
+            const data = await response.json();
+            console.log('Response data:', data);
+            
+            if (!response.ok) {
+                throw new Error(data.detail || `エラー: ${response.status}`);
+            }
+            
+            if (data && data.length > 0) {
+                displayResults(data, sport);
+            } else {
+                elements.resultsContainer.innerHTML = '<div class="text-center text-red-400">結果が取得できませんでした</div>';
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            elements.resultsContainer.innerHTML = `<div class="text-center text-red-400">エラー: ${error.message}</div>`;
+        } finally {
+            elements.analyzeBtn.disabled = false;
+            elements.analyzeBtn.textContent = '判定する';
+        }
+    });
+
+    const displayResults = (results, sport) => {
+        console.log('Displaying results:', results);
+        elements.resultsContainer.innerHTML = '';
+        
+        // 競技表示
+        const sportLabel = document.createElement('div');
+        sportLabel.className = 'text-sm text-slate-400 mb-2';
+        sportLabel.textContent = `競技: ${sport === 'soccer' ? 'サッカー' : 'MLB'}`;
+        elements.resultsContainer.appendChild(sportLabel);
+        
+        results.forEach(result => {
+            const card = document.createElement('div');
+            card.className = 'bg-slate-800/80 border border-slate-700 rounded-xl p-4 mb-2';
+            
+            if (result.error) {
+                card.innerHTML = `
+                    <div class="text-red-400">
+                        <div class="font-bold">${result.team_a_jp || result.team_a} vs ${result.team_b_jp || result.team_b}</div>
+                        <div class="text-sm mt-2">${result.error}</div>
+                    </div>
+                `;
+            } else {
+                const evValue = result.ev_pct_rake !== undefined ? result.ev_pct_rake : result.ev_pct || 0;
+                const evColor = evValue >= 0 ? 'text-green-400' : 'text-red-400';
+                const verdictColors = {
+                    'clear_plus': 'bg-green-500/20 text-green-400',
+                    'plus': 'bg-sky-500/20 text-sky-400',
+                    'fair': 'bg-yellow-500/20 text-yellow-400',
+                    'minus': 'bg-red-500/20 text-red-400'
+                };
+                const verdictLabels = {
+                    'clear_plus': 'BEST',
+                    'plus': 'GOOD',
+                    'fair': 'FAIR',
+                    'minus': 'PASS'
+                };
+                const vColor = verdictColors[result.verdict] || verdictColors.minus;
+                const vLabel = verdictLabels[result.verdict] || 'PASS';
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="font-bold text-white">
+                                ${result.fav_team_jp || result.team_a_jp || result.team_a} 
+                                <span class="text-slate-400 font-mono text-sm">${result.jp_line || ''}</span>
+                            </div>
+                            <div class="text-sm text-slate-400">
+                                vs ${result.team_b_jp || result.team_b}
+                            </div>
+                        </div>
+                        <span class="text-xs px-2 py-1 rounded ${vColor}">${vLabel}</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4 mt-3 text-center">
+                        <div>
+                            <div class="text-xs text-slate-500">期待値</div>
+                            <div class="font-semibold ${evColor}">${evValue >= 0 ? '+' : ''}${evValue.toFixed(1)}%</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-slate-500">勝率</div>
+                            <div class="font-semibold">${result.fair_prob ? (result.fair_prob * 100).toFixed(1) : 'N/A'}%</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-slate-500">公正オッズ</div>
+                            <div class="font-semibold">${result.fair_odds ? result.fair_odds.toFixed(3) : 'N/A'}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            elements.resultsContainer.appendChild(card);
+        });
+        
+        elements.resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+    
+    // 初期値設定
+    updateEffectiveOdds();
+});

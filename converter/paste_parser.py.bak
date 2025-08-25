@@ -1,0 +1,293 @@
+# converter/paste_parser.py
+# 貼り付け記法のパーサー（MLB/サッカー対応版）
+# 時刻・リーグ名対応版
+
+from __future__ import annotations
+import re
+import sys
+import os
+from typing import List, Tuple, Optional, Dict, Any
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+try:
+    from app.converter import jp_to_pinnacle, try_parse_jp
+except ImportError:
+    def try_parse_jp(jp_str):
+        mapping = {
+            "0": (True, 0.0),
+            "0/3": (True, 0.25),
+            "0/5": (True, 0.5),
+            "0/7": (True, 0.75),
+            "0.1": (True, 0.5),
+            "0半": (True, 0.5),
+            "0半3": (True, 0.75),
+            "0半5": (True, 0.5),
+            "0半7": (True, 0.75),
+            "1.0": (True, 1.0),
+            "1.5": (True, 1.5),
+            "1.7": (True, 1.75),
+            "1半": (True, 1.5),
+            "1半7": (True, 1.75),
+        }
+        return mapping.get(jp_str, (False, None))
+
+from converter.team_names import normalize_team_name, get_japanese_name
+
+try:
+    from converter.soccer_team_names import normalize_soccer_team
+    SOCCER_SUPPORT = True
+except ImportError:
+    SOCCER_SUPPORT = False
+    print("Warning: soccer_team_names.py not found. Soccer support disabled.")
+
+LINE_RE = re.compile(r"^\s*(?P<name>[^<>\r\n]+?)(?:<(?P<jp>[^>]+)>)?\s*$")
+
+class PasteParser:
+    """
+    貼り付け記法をパースして構造化データに変換
+    時刻・リーグ名対応版
+    """
+    
+    def __init__(self, sport: str = "mlb"):
+        self.sport = sport.lower()
+        self.api_games: Optional[List[Dict[str, Any]]] = None
+    
+    def set_api_games(self, api_games: List[Dict[str, Any]]):
+        """APIから取得した試合データをセット（照合用）"""
+        self.api_games = api_games
+    
+    def parse_text(self, text: str) -> List[Dict]:
+        """
+        貼り付けテキストをパースして試合リストを返す
+        """
+        lines = text.strip().split('\n')
+        
+        # 前処理：時刻とリーグ名を除外
+        content_lines = []
+        for line in lines:
+            stripped = line.strip()
+            
+            # 空行は区切りとして保持
+            if not stripped:
+                content_lines.append('')
+                continue
+            
+            # リーグ名（<XXX>形式）をスキップ
+            if stripped.startswith('<') and stripped.endswith('>'):
+                continue
+            
+            # [MLB]などのヘッダーをスキップ
+            if stripped.startswith('[') and stripped.endswith(']'):
+                continue
+            
+            # 時刻（XX:XX形式）をスキップ
+            if re.match(r'^\d{1,2}:\d{2}$', stripped):
+                continue
+            
+            content_lines.append(line)
+        
+        # 空行で分割してブロック化
+        blocks = self._split_by_empty_lines(content_lines)
+        
+        # 各ブロックを処理
+        all_games = []
+        for block in blocks:
+            if block:
+                games = self._process_block(block)
+                all_games.extend(games)
+        
+        return all_games
+    
+    def _split_by_empty_lines(self, lines: List[str]) -> List[List[str]]:
+        """空行で分割してブロック化"""
+        blocks = []
+        current_block = []
+        
+        for line in lines:
+            if line.strip() == '':
+                if current_block:
+                    blocks.append(current_block)
+                    current_block = []
+            else:
+                current_block.append(line)
+        
+        if current_block:
+            blocks.append(current_block)
+        
+        return blocks
+    
+    def _process_block(self, block: List[str]) -> List[Dict]:
+        """各ブロックを処理"""
+        pairs = self._extract_pairs(block)
+        
+        if len(pairs) == 2:
+            games = [(pairs[0], pairs[1])]
+        elif len(pairs) >= 3:
+            games = self._handle_multi_lines(pairs)
+        else:
+            games = []
+        
+        return self._process_games(games)
+    
+    def _handle_multi_lines(self, pairs: List[Tuple[str, Optional[str]]]) -> List[Tuple]:
+        """3行以上のブロックを処理"""
+        
+        # APIデータとの照合を試みる
+        if self.api_games:
+            matched_games = self._match_with_api(pairs)
+            if matched_games:
+                return matched_games
+        
+        # デフォルト：2行ずつペアリング
+        games = []
+        for i in range(0, len(pairs) - 1, 2):
+            games.append((pairs[i], pairs[i + 1]))
+        
+        return games
+    
+    def _match_with_api(self, pairs: List[Tuple[str, Optional[str]]]) -> Optional[List[Tuple]]:
+        """APIデータと照合してペアリングを決定"""
+        if not self.api_games:
+            return None
+        
+        normalized_teams = []
+        for name, jp_line in pairs:
+            en_name, _ = self._normalize_team_name(name)
+            normalized_teams.append((en_name, name, jp_line))
+        
+        matched_pairs = []
+        used_indices = set()
+        
+        for api_game in self.api_games:
+            home = api_game.get('home_team', '')
+            away = api_game.get('away_team', '')
+            
+            if self.sport in ["mlb", "baseball"]:
+                home = normalize_team_name(home) or home
+                away = normalize_team_name(away) or away
+            elif self.sport == "soccer" and SOCCER_SUPPORT:
+                home = normalize_soccer_team(home, to_english=True)
+                away = normalize_soccer_team(away, to_english=True)
+            
+            home_idx = None
+            away_idx = None
+            
+            for i, (en_name, orig_name, jp_line) in enumerate(normalized_teams):
+                if i in used_indices:
+                    continue
+                    
+                if en_name == home:
+                    home_idx = i
+                elif en_name == away:
+                    away_idx = i
+            
+            if home_idx is not None and away_idx is not None:
+                used_indices.add(home_idx)
+                used_indices.add(away_idx)
+                matched_pairs.append((pairs[home_idx], pairs[away_idx]))
+        
+        return matched_pairs if matched_pairs else None
+    
+    def _extract_pairs(self, lines: List[str]) -> List[Tuple[str, Optional[str]]]:
+        """各行からチーム名と日本式ラインを抽出"""
+        pairs = []
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+                
+            m = LINE_RE.match(line)
+            if not m:
+                continue
+            
+            name = m.group("name").strip()
+            jp = m.group("jp")
+            jp = jp.strip() if jp else None
+            pairs.append((name, jp))
+        
+        return pairs
+    
+    def _normalize_team_name(self, name: str) -> Tuple[str, str]:
+        """
+        スポーツに応じてチーム名を正規化
+        
+        Returns:
+            (英語名, 日本語名)
+        """
+        if self.sport == "soccer" and SOCCER_SUPPORT:
+            en_name = normalize_soccer_team(name, to_english=True)
+            if en_name == name:
+                jp_name = normalize_soccer_team(name, to_english=False)
+                if jp_name == name:
+                    jp_name = name
+            else:
+                jp_name = name
+            
+            return en_name, jp_name
+            
+        elif self.sport in ["mlb", "baseball"]:
+            en_name = normalize_team_name(name)
+            if en_name:
+                jp_name = get_japanese_name(en_name)
+            else:
+                en_name = name
+                jp_name = name
+            
+            return en_name, jp_name
+            
+        else:
+            return name, name
+    
+    def _process_games(self, games: List[Tuple]) -> List[Dict]:
+        """試合情報を構造化"""
+        results = []
+        
+        for (name_a_raw, jp_a), (name_b_raw, jp_b) in games:
+            en_a, jp_a_display = self._normalize_team_name(name_a_raw)
+            en_b, jp_b_display = self._normalize_team_name(name_b_raw)
+            
+            # サッカーでチーム名が辞書にない場合の警告を抑制
+            # （多くのチームが未登録のため）
+            
+            fav_side = None
+            fav_line_pinnacle = None
+            
+            if jp_a:
+                fav_side = "a"
+                ok, pinn = try_parse_jp(jp_a)
+                if ok:
+                    fav_line_pinnacle = pinn
+            elif jp_b:
+                fav_side = "b"
+                ok, pinn = try_parse_jp(jp_b)
+                if ok:
+                    fav_line_pinnacle = pinn
+            
+            results.append({
+                "team_a": en_a,
+                "team_b": en_b,
+                "team_a_jp": jp_a_display,
+                "team_b_jp": jp_b_display,
+                "line_a": jp_a,
+                "line_b": jp_b,
+                "fav_side": fav_side,
+                "fav_line_pinnacle": fav_line_pinnacle,
+                "sport": self.sport,
+            })
+        
+        return results
+
+def parse_paste_text(text: str, sport: str = "mlb") -> List[Dict]:
+    """
+    便利関数：テキストをパースして試合リストを返す
+    
+    Args:
+        text: 貼り付けテキスト
+        sport: スポーツ種別 ("mlb", "soccer", "nba" など)
+    
+    Returns:
+        試合情報のリスト
+    """
+    parser = PasteParser(sport)
+    return parser.parse_text(text)
