@@ -18,7 +18,6 @@ import json
 import datetime as dt
 import re
 import logging
-from app.universal_parser import UniversalBetParser
 
 # プロジェクトルートをパスに追加
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -163,41 +162,90 @@ def detect_sport(text: str) -> str:
     return "mlb"
 
 def parse_paste_text(text: str, sport: str = "auto") -> List[Dict]:
-    """汎用パーサーを使用した貼り付けテキスト解析"""
+    """貼り付けテキストをパース（時刻・リーグ区分対応版）"""
+    
+    # 略称の正規化辞書
+    ABBREVIATIONS = {
+        "Wソックス": "ホワイトソックス",
+        "Rソックス": "レッドソックス",
+        "Dバックス": "ダイヤモンドバックス",
+        "W.ソックス": "ホワイトソックス",
+        "R.ソックス": "レッドソックス",
+        "D.バックス": "ダイヤモンドバックス",
+    }
+    
+    # テキスト内の略称を正規化
+    for abbr, full_name in ABBREVIATIONS.items():
+        text = text.replace(abbr, full_name)
     
     if sport == "auto":
         sport = detect_sport(text)
         logging.info(f"Auto-detected sport: {sport}")
-    
-    # 汎用パーサーで解析
-    parser = UniversalBetParser()
-    parsed_games = parser.parse(text)
-    
-    # 既存のフォーマットに変換
+
     games = []
-    for pg in parsed_games:
-        game = {
-            "team_a": pg.get('team_a'),
-            "team_a_jp": pg.get('team_a'),
-            "team_b": pg.get('team_b'),
-            "team_b_jp": pg.get('team_b'),
-        }
+    lines = text.strip().split('\n')
+
+    current_game = {}
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
         
-        if pg.get('handicap'):
+        # 時刻をスキップ（例: 7:35, 11:05）
+        if re.match(r'^\d{1,2}:\d{2}$', line):
+            continue
+        
+        # リーグ区分をスキップ（例: <ナ・リーグ>, <インターリーグ>）
+        if re.match(r'^<[^>]+リーグ>$', line):
+            continue
+
+        # <>でハンデが指定されている場合
+        if '<' in line and '>' in line:
+            match = re.search(r'(.+?)<(.+?)>', line)
+            if match:
+                team = match.group(1).strip()
+                handicap = match.group(2).strip()
+
+                if not current_game:
+                    current_game = {
+                        "team_a": team,
+                        "team_a_jp": team,
+                        "line_a": handicap,
+                        "fav_side": "a"
+                    }
+                else:
+                    current_game["team_b"] = team
+                    current_game["team_b_jp"] = team
+                    current_game["line_b"] = handicap
+                    current_game["fav_side"] = "b"
+        else:
+            # ハンデなしのチーム
+            if not current_game:
+                current_game = {
+                    "team_a": line,
+                    "team_a_jp": line
+                }
+            else:
+                current_game["team_b"] = line
+                current_game["team_b_jp"] = line
+
+        # ペアが揃ったらゲームとして登録
+        if current_game and "team_b" in current_game:
             # ハンデをピナクル値に変換
-            ok, pinn = try_parse_jp(pg['handicap'])
-            if ok:
-                game["fav_line_pinnacle"] = pinn
-                game["jp_line"] = pg['handicap']
-                
-                # フェイバリット側を判定
-                if pg.get('fav_team') == pg.get('team_a'):
-                    game["fav_side"] = "a"
-                elif pg.get('fav_team') == pg.get('team_b'):
-                    game["fav_side"] = "b"
-        
-        games.append(game)
-    
+            if "line_a" in current_game:
+                ok, pinn = try_parse_jp(current_game["line_a"])
+                if ok:
+                    current_game["fav_line_pinnacle"] = pinn
+                    current_game["jp_line"] = current_game["line_a"]
+            elif "line_b" in current_game:
+                ok, pinn = try_parse_jp(current_game["line_b"])
+                if ok:
+                    current_game["fav_line_pinnacle"] = pinn
+                    current_game["jp_line"] = current_game["line_b"]
+
+            games.append(current_game)
+            current_game = {}
+
     return games
 
 # --- エンドポイント ---

@@ -18,7 +18,6 @@ import json
 import datetime as dt
 import re
 import logging
-from app.universal_parser import UniversalBetParser
 
 # プロジェクトルートをパスに追加
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -37,7 +36,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-app = FastAPI(title="BetValue Finder API", version="2.0.1")
+app = FastAPI(title="BetValue Finder API", version="2.0.0")
 
 # CORS設定
 app.add_middleware(
@@ -62,7 +61,7 @@ SOCCER_API_BASE = "https://v3.football.api-sports.io"
 MLB_LEAGUE_ID = 1
 SOCCER_LEAGUES = {
     39: "Premier League",
-    140: "La Liga",
+    140: "La Liga", 
     78: "Bundesliga",
     135: "Serie A",
     61: "Ligue 1",
@@ -92,22 +91,12 @@ class GameEvaluation(BaseModel):
     fav_team_jp: Optional[str] = None
     jp_line: Optional[str] = None
     pinnacle_line: Optional[float] = None
-    # フェイバリット側の評価
-    fav_fair_prob: Optional[float] = None
-    fav_fair_odds: Optional[float] = None
-    fav_ev_pct: Optional[float] = None
-    fav_ev_pct_rake: Optional[float] = None
-    fav_eff_odds: Optional[float] = None
-    fav_verdict: Optional[str] = None
-    # アンダードッグ側の評価
-    dog_fair_prob: Optional[float] = None
-    dog_fair_odds: Optional[float] = None
-    dog_ev_pct: Optional[float] = None
-    dog_ev_pct_rake: Optional[float] = None
-    dog_eff_odds: Optional[float] = None
-    dog_verdict: Optional[str] = None
-    # 推奨とエラー
-    recommended_side: Optional[str] = None  # "favorite", "underdog", "none"
+    fair_prob: Optional[float] = None
+    fair_odds: Optional[float] = None
+    ev_pct: Optional[float] = None
+    ev_pct_rake: Optional[float] = None
+    eff_odds: Optional[float] = None
+    verdict: Optional[str] = None
     error: Optional[str] = None
     error_code: Optional[str] = None
 
@@ -137,66 +126,92 @@ def detect_sport(text: str) -> str:
     """テキストから競技を自動判定"""
     # サッカーのキーワード
     soccer_keywords = [
-        "パレス", "フォレスト", "シティ", "ユナイテッド", "チェルシー",
+        "パレス", "フォレスト", "シティ", "ユナイテッド", "チェルシー", 
         "リバプール", "アーセナル", "バルセロナ", "レアル", "バイエルン",
         "ユベントス", "ミラン", "パリ", "0/3", "0/5", "0/7"
     ]
-
+    
     # MLBのキーワード
     mlb_keywords = [
         "ヤンキース", "レッドソックス", "ドジャース", "ジャイアンツ",
         "カブス", "メッツ", "エンゼルス", "アストロズ", "ブレーブス"
     ]
-
+    
     text_lower = text.lower()
-
+    
     # キーワードチェック
     for keyword in soccer_keywords:
         if keyword.lower() in text_lower:
             return "soccer"
-
+    
     for keyword in mlb_keywords:
         if keyword.lower() in text_lower:
             return "mlb"
-
+    
     # デフォルトはMLB
     return "mlb"
 
 def parse_paste_text(text: str, sport: str = "auto") -> List[Dict]:
-    """汎用パーサーを使用した貼り付けテキスト解析"""
-    
+    """貼り付けテキストをパース"""
     if sport == "auto":
         sport = detect_sport(text)
         logging.info(f"Auto-detected sport: {sport}")
     
-    # 汎用パーサーで解析
-    parser = UniversalBetParser()
-    parsed_games = parser.parse(text)
-    
-    # 既存のフォーマットに変換
     games = []
-    for pg in parsed_games:
-        game = {
-            "team_a": pg.get('team_a'),
-            "team_a_jp": pg.get('team_a'),
-            "team_b": pg.get('team_b'),
-            "team_b_jp": pg.get('team_b'),
-        }
-        
-        if pg.get('handicap'):
-            # ハンデをピナクル値に変換
-            ok, pinn = try_parse_jp(pg['handicap'])
-            if ok:
-                game["fav_line_pinnacle"] = pinn
-                game["jp_line"] = pg['handicap']
+    lines = text.strip().split('\n')
+    
+    current_game = {}
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+            
+        # <>でハンデが指定されている場合
+        if '<' in line and '>' in line:
+            match = re.search(r'(.+?)<(.+?)>', line)
+            if match:
+                team = match.group(1).strip()
+                handicap = match.group(2).strip()
                 
-                # フェイバリット側を判定
-                if pg.get('fav_team') == pg.get('team_a'):
-                    game["fav_side"] = "a"
-                elif pg.get('fav_team') == pg.get('team_b'):
-                    game["fav_side"] = "b"
-        
-        games.append(game)
+                if not current_game:
+                    current_game = {
+                        "team_a": team,
+                        "team_a_jp": team,
+                        "line_a": handicap,
+                        "fav_side": "a"
+                    }
+                else:
+                    current_game["team_b"] = team
+                    current_game["team_b_jp"] = team
+                    current_game["line_b"] = handicap
+                    current_game["fav_side"] = "b"
+        else:
+            # ハンデなしのチーム
+            if not current_game:
+                current_game = {
+                    "team_a": line,
+                    "team_a_jp": line
+                }
+            else:
+                current_game["team_b"] = line
+                current_game["team_b_jp"] = line
+                
+        # ペアが揃ったらゲームとして登録
+        if current_game and "team_b" in current_game:
+            # ハンデをピナクル値に変換
+            if "line_a" in current_game:
+                ok, pinn = try_parse_jp(current_game["line_a"])
+                if ok:
+                    current_game["fav_line_pinnacle"] = pinn
+                    current_game["jp_line"] = current_game["line_a"]
+            elif "line_b" in current_game:
+                ok, pinn = try_parse_jp(current_game["line_b"])
+                if ok:
+                    current_game["fav_line_pinnacle"] = pinn
+                    current_game["jp_line"] = current_game["line_b"]
+                    
+            games.append(current_game)
+            current_game = {}
     
     return games
 
@@ -208,7 +223,7 @@ async def root():
     index_path = os.path.join(static_dir, "index.html")
     if os.path.exists(index_path):
         return FileResponse(index_path, media_type="text/html")
-
+    
     # index.htmlがない場合は簡単なメッセージ
     return HTMLResponse(content="""
     <html>
@@ -229,36 +244,36 @@ async def map_endpoint(req: MapRequest):
         if not ok:
             return {"error": f"未対応の日本式表記: {req.jp}"}
         return {"jp": req.jp, "pinnacle": pinn}
-
+    
     if req.pinn is not None:
         try:
             jp = pinnacle_to_jp(req.pinn)
             return {"pinnacle": req.pinn, "jp": jp}
         except Exception as e:
             return {"error": str(e)}
-
+    
     return {"error": "jp または pinn のどちらかを指定してください"}
 
 @app.post("/analyze_paste", response_model=List[GameEvaluation])
 async def analyze_paste_endpoint(req: AnalyzePasteRequest):
-    """貼り付けテキストを解析してEV計算（両側評価版）"""
+    """貼り付けテキストを解析してEV計算（GameManager統合版）"""
     try:
         # APIキー取得
         api_key = get_api_key()
-
+        
         # テキストをパース
         games = parse_paste_text(req.text, req.sport)
-
+        
         if not games:
             raise HTTPException(status_code=400, detail="試合データが見つかりません")
-
+        
         # GameManagerとモジュール初期化
         mlb_manager = MLBGameManager(api_key)
         odds_processor = OddsProcessor()
         ev_evaluator = EVEvaluator(jp_odds=req.jp_odds, rakeback=req.rakeback)
-
+        
         results = []
-
+        
         for game in games:
             # 基本的な評価結果を作成
             eval_result = GameEvaluation(
@@ -267,106 +282,75 @@ async def analyze_paste_endpoint(req: AnalyzePasteRequest):
                 team_a_jp=game.get("team_a_jp", game["team_a"]),
                 team_b_jp=game.get("team_b_jp", game["team_b"])
             )
-
+            
             # 試合を検索
             matched_game = mlb_manager.match_teams([game["team_a"], game["team_b"]])
-
+            
             if not matched_game:
                 eval_result.error = "試合が見つかりません"
                 eval_result.error_code = "GAME_NOT_FOUND"
                 results.append(eval_result)
                 continue
-
+            
             # フェイバリット側の処理
             if game.get("fav_side") and game.get("fav_line_pinnacle"):
                 if game["fav_side"] == "a":
                     eval_result.fav_team = game["team_a"]
                     eval_result.fav_team_jp = game["team_a_jp"]
-                    fav_side = "home" if matched_game["home"] == eval_result.fav_team else "away"
-                    dog_team = game["team_b"]
-                    dog_team_jp = game["team_b_jp"]
+                    eval_result.jp_line = game.get("jp_line")
+                    side = "home" if matched_game["home"] == eval_result.fav_team else "away"
                 else:
                     eval_result.fav_team = game["team_b"]
                     eval_result.fav_team_jp = game["team_b_jp"]
-                    fav_side = "home" if matched_game["home"] == eval_result.fav_team else "away"
-                    dog_team = game["team_a"]
-                    dog_team_jp = game["team_a_jp"]
-
-                eval_result.jp_line = game.get("jp_line")
+                    eval_result.jp_line = game.get("jp_line")
+                    side = "home" if matched_game["home"] == eval_result.fav_team else "away"
+                
                 eval_result.pinnacle_line = game["fav_line_pinnacle"]
-
-                # アンダードッグ側を判定
-                dog_side = "away" if fav_side == "home" else "home"
-
+                
                 # オッズを取得
                 odds_data = mlb_manager.fetch_odds(matched_game["id"])
-
+                
                 if not odds_data:
                     eval_result.error = "オッズが取得できません"
                     eval_result.error_code = "NO_ODDS"
                     results.append(eval_result)
                     continue
-
+                
                 # オッズを処理
                 line_data = odds_processor.prepare_line_data(odds_data)
-
+                
                 if not line_data:
                     eval_result.error = "ハンデオッズが見つかりません"
                     eval_result.error_code = "NO_HANDICAP_ODDS"
                     results.append(eval_result)
                     continue
-
-                # フェイバリット側のEV評価（マイナスライン）
-                fav_evaluation = ev_evaluator.evaluate_single_line(
-                    line_data,
-                    -eval_result.pinnacle_line,  # フェイバリットはマイナス
-                    fav_side
-                )
-
-                # アンダードッグ側のEV評価（プラスライン）
-                dog_evaluation = ev_evaluator.evaluate_single_line(
-                    line_data,
-                    eval_result.pinnacle_line,  # アンダードッグはプラス
-                    dog_side
-                )
-
-                # フェイバリット側の結果を設定
-                eval_result.fav_fair_prob = fav_evaluation.get("fair_prob")
-                eval_result.fav_fair_odds = fav_evaluation.get("fair_odds")
-                eval_result.fav_ev_pct = fav_evaluation.get("ev_pct")
-                eval_result.fav_ev_pct_rake = fav_evaluation.get("ev_pct_rake")
-                eval_result.fav_eff_odds = fav_evaluation.get("eff_odds")
-                eval_result.fav_verdict = fav_evaluation.get("verdict")
-
-                # アンダードッグ側の結果を設定
-                eval_result.dog_fair_prob = dog_evaluation.get("fair_prob")
-                eval_result.dog_fair_odds = dog_evaluation.get("fair_odds")
-                eval_result.dog_ev_pct = dog_evaluation.get("ev_pct")
-                eval_result.dog_ev_pct_rake = dog_evaluation.get("ev_pct_rake")
-                eval_result.dog_eff_odds = dog_evaluation.get("eff_odds")
-                eval_result.dog_verdict = dog_evaluation.get("verdict")
-
-                # 推奨側を決定（EVが高い方）
-                if eval_result.fav_ev_pct_rake and eval_result.dog_ev_pct_rake:
-                    if eval_result.fav_ev_pct_rake > eval_result.dog_ev_pct_rake:
-                        eval_result.recommended_side = "favorite"
-                    elif eval_result.dog_ev_pct_rake > eval_result.fav_ev_pct_rake:
-                        eval_result.recommended_side = "underdog"
-                    else:
-                        eval_result.recommended_side = "none"
                 
-                # エラーチェック
-                if fav_evaluation.get("error") or dog_evaluation.get("error"):
-                    eval_result.error = f"評価エラー: {fav_evaluation.get('error', '')} {dog_evaluation.get('error', '')}"
+                # EV評価
+                evaluation = ev_evaluator.evaluate_single_line(
+                    line_data,
+                    eval_result.pinnacle_line,
+                    side
+                )
+                
+                # 結果を設定
+                eval_result.fair_prob = evaluation.get("fair_prob")
+                eval_result.fair_odds = evaluation.get("fair_odds")
+                eval_result.ev_pct = evaluation.get("ev_pct")
+                eval_result.ev_pct_rake = evaluation.get("ev_pct_rake")
+                eval_result.eff_odds = evaluation.get("eff_odds")
+                eval_result.verdict = evaluation.get("verdict")
+                
+                if evaluation.get("error"):
+                    eval_result.error = evaluation["error"]
                     eval_result.error_code = "EVALUATION_ERROR"
             else:
                 eval_result.error = "ハンデが指定されていません"
                 eval_result.error_code = "NO_HANDICAP"
-
+            
             results.append(eval_result)
-
+        
         return results
-
+        
     except HTTPException:
         raise
     except Exception as e:
@@ -378,38 +362,38 @@ async def evaluate_odds_endpoint(req: EvaluateOddsRequest):
     """特定ゲーム・ラインのEV評価"""
     try:
         api_key = get_api_key()
-
+        
         # GameManagerとモジュール初期化
         mlb_manager = MLBGameManager(api_key)
         odds_processor = OddsProcessor()
         ev_evaluator = EVEvaluator(jp_odds=req.jp_odds, rakeback=req.rakeback)
-
+        
         # オッズ取得
         odds_data = mlb_manager.fetch_odds(req.game_id)
-
+        
         if not odds_data:
             raise HTTPException(status_code=404, detail="Odds not found for this game")
-
+        
         # オッズを処理
         line_data = odds_processor.prepare_line_data(odds_data)
-
+        
         if not line_data:
             raise HTTPException(status_code=404, detail="No handicap odds available")
-
+        
         # 日本式をピナクル値に変換
         ok, pinnacle_value = try_parse_jp(req.jp_line)
         if not ok:
             raise HTTPException(status_code=400, detail=f"Invalid JP line: {req.jp_line}")
-
+        
         # EV評価
         result = ev_evaluator.evaluate_single_line(
             line_data,
             pinnacle_value,
             req.side
         )
-
+        
         return result
-
+        
     except HTTPException:
         raise
     except Exception as e:
@@ -421,33 +405,33 @@ async def find_best_lines_endpoint(req: BestLinesRequest):
     """特定ゲームの最良ラインを検索"""
     try:
         api_key = get_api_key()
-
+        
         # GameManagerとモジュール初期化
         mlb_manager = MLBGameManager(api_key)
         odds_processor = OddsProcessor()
         ev_evaluator = EVEvaluator(jp_odds=req.jp_odds, rakeback=req.rakeback)
-
+        
         # オッズ取得
         odds_data = mlb_manager.fetch_odds(req.game_id)
-
+        
         if not odds_data:
             raise HTTPException(status_code=404, detail="Odds not found for this game")
-
+        
         # オッズを処理
         line_data = odds_processor.prepare_line_data(odds_data)
-
+        
         if not line_data:
             raise HTTPException(status_code=404, detail="No handicap odds available")
-
+        
         # 最良ラインを検索
         best_lines = ev_evaluator.find_best_lines(
             line_data,
             top_n=req.top_n,
             min_ev=req.min_ev
         )
-
+        
         return best_lines
-
+        
     except HTTPException:
         raise
     except Exception as e:
@@ -459,7 +443,7 @@ async def health_check():
     """ヘルスチェック"""
     return {
         "status": "healthy",
-        "version": "2.0.1",
+        "version": "2.0.0",
         "modules": {
             "odds_processor": "OK",
             "ev_evaluator": "OK",
