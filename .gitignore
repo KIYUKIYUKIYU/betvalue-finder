@@ -37,3 +37,16 @@ tmp_*
 dirlist.txt
 get-pip.py
 .env
+
+# Nested project folder
+betvalue-finder/
+
+# Debug folder
+debug/
+
+# CSV outputs
+*.csv
+
+# User input files
+user_input*.txt
+verify_pattern.txt
