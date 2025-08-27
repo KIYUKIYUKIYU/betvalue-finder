@@ -6,8 +6,18 @@ MLB専用パーサー
 
 import json
 import os
+import sys
+
+# スタンドアロン実行対応
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+try:
+    from parsers.base import SportParserBase
+except ModuleNotFoundError:
+    from base import SportParserBase
+
 from typing import Dict
-from parsers.base import SportParserBase
 
 class MLBParser(SportParserBase):
     """MLB専用パーサー"""
