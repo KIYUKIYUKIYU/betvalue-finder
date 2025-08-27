@@ -303,3 +303,14 @@ code app/main.py
 git add .
 git commit -m "Add universal parser for multiple input formats"
 git push
+## 📅 2025年8月26-27日 更新
+
+### ✅ 実装完了
+1. **汎用入力パーサー（app/universal_parser.py）**
+   - あらゆる入力形式に対応
+   - 略称対応（Rソックス、Wソックス、Dバックス）
+   
+2. **拡張可能パーサーシステム設計**
+   - parsers/base.py - 基底クラス
+   - parsers/mlb.py - MLB専用
+   - data/sports/mlb/teams.json - 全30チームマスターデータ
