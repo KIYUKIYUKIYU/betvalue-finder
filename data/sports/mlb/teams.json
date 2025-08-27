@@ -1,0 +1,334 @@
+{
+  "teams": {
+    "BAL": {
+      "id": "BAL",
+      "primary_name_jp": "オリオールズ",
+      "primary_name_en": "Orioles",
+      "aliases": {
+        "jp": ["ボルチモア", "ボルチモア・オリオールズ"],
+        "en": ["Baltimore", "Baltimore Orioles"]
+      },
+      "league": "AL",
+      "division": "East"
+    },
+    "BOS": {
+      "id": "BOS",
+      "primary_name_jp": "レッドソックス",
+      "primary_name_en": "Red Sox",
+      "aliases": {
+        "jp": ["Rソックス", "赤ソックス", "ボストン", "レッドSox"],
+        "en": ["Boston", "Boston Red Sox", "BoSox"]
+      },
+      "league": "AL",
+      "division": "East"
+    },
+    "NYY": {
+      "id": "NYY",
+      "primary_name_jp": "ヤンキース",
+      "primary_name_en": "Yankees",
+      "aliases": {
+        "jp": ["ニューヨーク・ヤンキース", "NYヤンキース", "ヤンキーズ"],
+        "en": ["New York Yankees", "NY Yankees"]
+      },
+      "league": "AL",
+      "division": "East"
+    },
+    "TB": {
+      "id": "TB",
+      "primary_name_jp": "レイズ",
+      "primary_name_en": "Rays",
+      "aliases": {
+        "jp": ["タンパベイ", "タンパベイ・レイズ", "レイズ"],
+        "en": ["Tampa Bay", "Tampa Bay Rays"]
+      },
+      "league": "AL",
+      "division": "East"
+    },
+    "TOR": {
+      "id": "TOR",
+      "primary_name_jp": "ブルージェイズ",
+      "primary_name_en": "Blue Jays",
+      "aliases": {
+        "jp": ["トロント", "トロント・ブルージェイズ", "ブルージェイズ"],
+        "en": ["Toronto", "Toronto Blue Jays", "Jays"]
+      },
+      "league": "AL",
+      "division": "East"
+    },
+    "CLE": {
+      "id": "CLE",
+      "primary_name_jp": "ガーディアンズ",
+      "primary_name_en": "Guardians",
+      "aliases": {
+        "jp": ["クリーブランド", "クリーブランド・ガーディアンズ"],
+        "en": ["Cleveland", "Cleveland Guardians"]
+      },
+      "league": "AL",
+      "division": "Central"
+    },
+    "DET": {
+      "id": "DET",
+      "primary_name_jp": "タイガース",
+      "primary_name_en": "Tigers",
+      "aliases": {
+        "jp": ["デトロイト", "デトロイト・タイガース"],
+        "en": ["Detroit", "Detroit Tigers"]
+      },
+      "league": "AL",
+      "division": "Central"
+    },
+    "KC": {
+      "id": "KC",
+      "primary_name_jp": "ロイヤルズ",
+      "primary_name_en": "Royals",
+      "aliases": {
+        "jp": ["カンザスシティ", "カンザスシティ・ロイヤルズ"],
+        "en": ["Kansas City", "Kansas City Royals", "KC Royals"]
+      },
+      "league": "AL",
+      "division": "Central"
+    },
+    "MIN": {
+      "id": "MIN",
+      "primary_name_jp": "ツインズ",
+      "primary_name_en": "Twins",
+      "aliases": {
+        "jp": ["ミネソタ", "ミネソタ・ツインズ"],
+        "en": ["Minnesota", "Minnesota Twins"]
+      },
+      "league": "AL",
+      "division": "Central"
+    },
+    "CWS": {
+      "id": "CWS",
+      "primary_name_jp": "ホワイトソックス",
+      "primary_name_en": "White Sox",
+      "aliases": {
+        "jp": ["Wソックス", "白ソックス", "シカゴ・ホワイトソックス", "ホワイトSox"],
+        "en": ["Chicago White Sox", "ChiSox", "White Sox"]
+      },
+      "league": "AL",
+      "division": "Central"
+    },
+    "HOU": {
+      "id": "HOU",
+      "primary_name_jp": "アストロズ",
+      "primary_name_en": "Astros",
+      "aliases": {
+        "jp": ["ヒューストン", "ヒューストン・アストロズ"],
+        "en": ["Houston", "Houston Astros"]
+      },
+      "league": "AL",
+      "division": "West"
+    },
+    "LAA": {
+      "id": "LAA",
+      "primary_name_jp": "エンゼルス",
+      "primary_name_en": "Angels",
+      "aliases": {
+        "jp": ["エンジェルス", "ロサンゼルス・エンゼルス", "LAエンゼルス"],
+        "en": ["Los Angeles Angels", "LA Angels", "Angels"]
+      },
+      "league": "AL",
+      "division": "West"
+    },
+    "OAK": {
+      "id": "OAK",
+      "primary_name_jp": "アスレチックス",
+      "primary_name_en": "Athletics",
+      "aliases": {
+        "jp": ["オークランド", "オークランド・アスレチックス", "A's"],
+        "en": ["Oakland", "Oakland Athletics", "A's"]
+      },
+      "league": "AL",
+      "division": "West"
+    },
+    "SEA": {
+      "id": "SEA",
+      "primary_name_jp": "マリナーズ",
+      "primary_name_en": "Mariners",
+      "aliases": {
+        "jp": ["シアトル", "シアトル・マリナーズ"],
+        "en": ["Seattle", "Seattle Mariners", "M's"]
+      },
+      "league": "AL",
+      "division": "West"
+    },
+    "TEX": {
+      "id": "TEX",
+      "primary_name_jp": "レンジャーズ",
+      "primary_name_en": "Rangers",
+      "aliases": {
+        "jp": ["テキサス", "テキサス・レンジャーズ"],
+        "en": ["Texas", "Texas Rangers"]
+      },
+      "league": "AL",
+      "division": "West"
+    },
+    "ATL": {
+      "id": "ATL",
+      "primary_name_jp": "ブレーブス",
+      "primary_name_en": "Braves",
+      "aliases": {
+        "jp": ["アトランタ", "アトランタ・ブレーブス"],
+        "en": ["Atlanta", "Atlanta Braves"]
+      },
+      "league": "NL",
+      "division": "East"
+    },
+    "MIA": {
+      "id": "MIA",
+      "primary_name_jp": "マーリンズ",
+      "primary_name_en": "Marlins",
+      "aliases": {
+        "jp": ["マイアミ", "マイアミ・マーリンズ"],
+        "en": ["Miami", "Miami Marlins"]
+      },
+      "league": "NL",
+      "division": "East"
+    },
+    "NYM": {
+      "id": "NYM",
+      "primary_name_jp": "メッツ",
+      "primary_name_en": "Mets",
+      "aliases": {
+        "jp": ["ニューヨーク・メッツ", "NYメッツ"],
+        "en": ["New York Mets", "NY Mets"]
+      },
+      "league": "NL",
+      "division": "East"
+    },
+    "PHI": {
+      "id": "PHI",
+      "primary_name_jp": "フィリーズ",
+      "primary_name_en": "Phillies",
+      "aliases": {
+        "jp": ["フィラデルフィア", "フィラデルフィア・フィリーズ"],
+        "en": ["Philadelphia", "Philadelphia Phillies"]
+      },
+      "league": "NL",
+      "division": "East"
+    },
+    "WSH": {
+      "id": "WSH",
+      "primary_name_jp": "ナショナルズ",
+      "primary_name_en": "Nationals",
+      "aliases": {
+        "jp": ["ワシントン", "ワシントン・ナショナルズ"],
+        "en": ["Washington", "Washington Nationals", "Nats"]
+      },
+      "league": "NL",
+      "division": "East"
+    },
+    "CHC": {
+      "id": "CHC",
+      "primary_name_jp": "カブス",
+      "primary_name_en": "Cubs",
+      "aliases": {
+        "jp": ["シカゴ・カブス", "カブズ"],
+        "en": ["Chicago Cubs", "Cubs"]
+      },
+      "league": "NL",
+      "division": "Central"
+    },
+    "CIN": {
+      "id": "CIN",
+      "primary_name_jp": "レッズ",
+      "primary_name_en": "Reds",
+      "aliases": {
+        "jp": ["シンシナティ", "シンシナティ・レッズ"],
+        "en": ["Cincinnati", "Cincinnati Reds"]
+      },
+      "league": "NL",
+      "division": "Central"
+    },
+    "MIL": {
+      "id": "MIL",
+      "primary_name_jp": "ブリュワーズ",
+      "primary_name_en": "Brewers",
+      "aliases": {
+        "jp": ["ミルウォーキー", "ミルウォーキー・ブリュワーズ"],
+        "en": ["Milwaukee", "Milwaukee Brewers"]
+      },
+      "league": "NL",
+      "division": "Central"
+    },
+    "PIT": {
+      "id": "PIT",
+      "primary_name_jp": "パイレーツ",
+      "primary_name_en": "Pirates",
+      "aliases": {
+        "jp": ["ピッツバーグ", "ピッツバーグ・パイレーツ"],
+        "en": ["Pittsburgh", "Pittsburgh Pirates"]
+      },
+      "league": "NL",
+      "division": "Central"
+    },
+    "STL": {
+      "id": "STL",
+      "primary_name_jp": "カージナルス",
+      "primary_name_en": "Cardinals",
+      "aliases": {
+        "jp": ["セントルイス", "セントルイス・カージナルス"],
+        "en": ["St. Louis", "St. Louis Cardinals", "Cards"]
+      },
+      "league": "NL",
+      "division": "Central"
+    },
+    "ARI": {
+      "id": "ARI",
+      "primary_name_jp": "ダイヤモンドバックス",
+      "primary_name_en": "Diamondbacks",
+      "aliases": {
+        "jp": ["Dバックス", "Ｄバックス", "アリゾナ", "アリゾナ・ダイヤモンドバックス"],
+        "en": ["Arizona", "Arizona Diamondbacks", "D-backs", "Dbacks"]
+      },
+      "league": "NL",
+      "division": "West"
+    },
+    "COL": {
+      "id": "COL",
+      "primary_name_jp": "ロッキーズ",
+      "primary_name_en": "Rockies",
+      "aliases": {
+        "jp": ["コロラド", "コロラド・ロッキーズ"],
+        "en": ["Colorado", "Colorado Rockies"]
+      },
+      "league": "NL",
+      "division": "West"
+    },
+    "LAD": {
+      "id": "LAD",
+      "primary_name_jp": "ドジャース",
+      "primary_name_en": "Dodgers",
+      "aliases": {
+        "jp": ["ロサンゼルス・ドジャース", "LAドジャース"],
+        "en": ["Los Angeles Dodgers", "LA Dodgers"]
+      },
+      "league": "NL",
+      "division": "West"
+    },
+    "SD": {
+      "id": "SD",
+      "primary_name_jp": "パドレス",
+      "primary_name_en": "Padres",
+      "aliases": {
+        "jp": ["サンディエゴ", "サンディエゴ・パドレス"],
+        "en": ["San Diego", "San Diego Padres"]
+      },
+      "league": "NL",
+      "division": "West"
+    },
+    "SF": {
+      "id": "SF",
+      "primary_name_jp": "ジャイアンツ",
+      "primary_name_en": "Giants",
+      "aliases": {
+        "jp": ["サンフランシスコ", "サンフランシスコ・ジャイアンツ"],
+        "en": ["San Francisco", "San Francisco Giants"]
+      },
+      "league": "NL",
+      "division": "West"
+    }
+  }
+}
