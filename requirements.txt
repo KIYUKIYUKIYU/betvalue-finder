@@ -6,6 +6,7 @@ requests
 pandas
 beautifulsoup4
 aiohttp>=3.8.0
+psutil
 
 # Lightweight NLP dependencies for Railway (without heavy ML models)
 spacy==3.7.6
