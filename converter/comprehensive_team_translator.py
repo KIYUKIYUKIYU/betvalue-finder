@@ -207,6 +207,67 @@ class ComprehensiveTeamTranslator:
             'サークルB': 'cercle brugge',
             'オイペン': 'eupen',
 
+            # スコットランド
+            'セルティック': 'celtic',
+            'セルティック・グラスゴー': 'celtic',
+            'レンジャーズ・グラスゴー': 'rangers',
+
+            # スイス
+            'ヤングボーイズ': 'young boys',
+            'バーゼル': 'basel',
+
+            # トルコ
+            'フェネルバフチェ': 'fenerbahce',
+            'ガラタサライ': 'galatasaray',
+            'ベシクタシュ': 'besiktas',
+
+            # ブルガリア
+            'ルドゴレツ': 'ludogorets',
+
+            # ギリシャ
+            'パナシナイコス': 'panathinaikos',
+            'オリンピアコス': 'olympiacos',
+
+            # チェコ
+            'プルゼニ': 'plzen',
+            'スパルタ・プラハ': 'sparta prague',
+            'スラビア・プラハ': 'slavia prague',
+
+            # スウェーデン
+            'マルメ': 'malmo',
+
+            # オーストリア
+            'ザルツブルク': 'salzburg',
+            'シュトゥルム': 'sturm graz',
+
+            # ノルウェー
+            'ブラン': 'brann',
+
+            # ルーマニア
+            'FCSB': 'fcsb',
+
+            # クロアチア
+            'ザグレブ': 'dinamo zagreb',
+            'ディナモ・ザグレブ': 'dinamo zagreb',
+
+            # イスラエル
+            'テルアビブ': 'maccabi tel aviv',
+            'マッカビ・テルアビブ': 'maccabi tel aviv',
+
+            # ハンガリー
+            'フェレンツバロシュ': 'ferencvaros',
+
+            # デンマーク
+            'ミッティラント': 'midtjylland',
+
+            # セルビア
+            'レッドスター': 'red star',
+            'ツルヴェナ・ズヴェズダ': 'red star',
+
+            # イングランド（追加）
+            'フォレスト': 'nottingham forest',
+            'ノッティンガム・フォレスト': 'nottingham forest',
+
             # ポルトガル（プリメイラリーガ）
             'ポルト': 'porto',
             'ベンフィカ': 'benfica',
