@@ -1,0 +1,233 @@
+{
+  "アヤックス": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "Ajax Amsterdam",
+    "short_name": "AJA",
+    "aliases": ["Ajax", "AJA", "Ajax Amsterdam", "アムステルダム", "アヤックス"],
+    "common_typos": ["アヤクス", "あやっくす"],
+    "region_tags": ["オランダ", "アムステルダム", "北ホラント"],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "PSV": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "PSV Eindhoven",
+    "short_name": "PSV",
+    "aliases": ["PSV", "PSV Eindhoven", "アイントホーフェン", "PSVアイントホーフェン"],
+    "common_typos": ["ぴーえすぶい"],
+    "region_tags": ["オランダ", "アイントホーフェン", "北ブラバント"],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "フェイエノールト": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "Feyenoord Rotterdam",
+    "short_name": "FEY",
+    "aliases": ["Feyenoord", "FEY", "ロッテルダム"],
+    "common_typos": ["フェイエノード", "ふぇいえのーると"],
+    "region_tags": ["オランダ", "ロッテルダム", "南ホラント"],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "AZ": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "AZ Alkmaar",
+    "short_name": "AZ",
+    "aliases": ["AZ Alkmaar", "アルクマール", "AZアルクマール"],
+    "common_typos": ["AZ", "えーぜっと"],
+    "region_tags": ["オランダ", "アルクマール", "北ホラント"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "FCトゥエンテ": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "FC Twente",
+    "short_name": "TWE",
+    "aliases": ["Twente", "TWE", "FC Twente", "トゥエンテ", "トウェンテ"],
+    "common_typos": ["FC・トゥエンテ", "ふぉーちーとぅえんて"],
+    "region_tags": ["オランダ", "エンスヘーデ", "オーファーアイセル"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ユトレヒト": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "FC Utrecht",
+    "short_name": "UTR",
+    "aliases": ["Utrecht", "UTR", "FC Utrecht"],
+    "common_typos": ["ユトレヒト", "ゆとれひと"],
+    "region_tags": ["オランダ", "ユトレヒト"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ビテッセ": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "Vitesse Arnhem",
+    "short_name": "VIT",
+    "aliases": ["Vitesse", "VIT", "アルンヘム"],
+    "common_typos": ["ビテッセ", "びてっせ"],
+    "region_tags": ["オランダ", "アルンヘム", "ヘルダーラント"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "グローニンゲン": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "FC Groningen",
+    "short_name": "GRO",
+    "aliases": ["Groningen", "GRO", "FC Groningen", "フローニンゲン"],
+    "common_typos": ["グローニンゲン", "ぐろーにんげん"],
+    "region_tags": ["オランダ", "グローニンゲン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ヘーレンフェーン": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "SC Heerenveen",
+    "short_name": "HEE",
+    "aliases": ["Heerenveen", "HEE", "SC Heerenveen"],
+    "common_typos": ["ヘーレンフェーン", "へーれんふぇーん"],
+    "region_tags": ["オランダ", "ヘーレンフェーン", "フリースラント"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ワールヴァイク": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "RKC Waalwijk",
+    "short_name": "RKC",
+    "aliases": ["RKC Waalwijk", "RKC", "Waalwijk"],
+    "common_typos": ["ワールヴァイク", "わーるわいく"],
+    "region_tags": ["オランダ", "ワールヴァイク", "北ブラバント"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "フォルテュナ": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "Fortuna Sittard",
+    "short_name": "FOR",
+    "aliases": ["Fortuna", "FOR", "Fortuna Sittard", "シッタルト", "フォルトゥナ・シッタート"],
+    "common_typos": ["フォルテュナ", "ふぉるてゅな"],
+    "region_tags": ["オランダ", "シッタルト", "リンブルク"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ペック・ズヴォレ": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "PEC Zwolle",
+    "short_name": "PEC",
+    "aliases": ["PEC Zwolle", "PEC", "Zwolle", "ズウォレ", "PECズヴォレ"],
+    "common_typos": ["ペック・ズヴォレ", "ぺっくずぼれ"],
+    "region_tags": ["オランダ", "ズヴォレ", "オーファーアイセル"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "GAイーグルス": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "Go Ahead Eagles",
+    "short_name": "GAE",
+    "aliases": ["Go Ahead Eagles", "GAE", "イーグルス", "ゴー・アヘッド・イーグルス"],
+    "common_typos": ["GA・イーグルス", "ごーあへっどいーぐるす"],
+    "region_tags": ["オランダ", "デーフェンテル", "オーファーアイセル"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ヘラクレス": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "Heracles Almelo",
+    "short_name": "HER",
+    "aliases": ["Heracles", "HER", "アルメロ", "ヘラクレス・アルメロ"],
+    "common_typos": ["ヘラクレス", "へらくれす"],
+    "region_tags": ["オランダ", "アルメロ", "オーファーアイセル"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "NEC": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "NEC Nijmegen",
+    "short_name": "NEC",
+    "aliases": ["NEC Nijmegen", "ナイメーヘン", "NECナイメヘン"],
+    "common_typos": ["NEC", "えぬいーしー"],
+    "region_tags": ["オランダ", "ナイメーヘン", "ヘルダーラント"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "スパルタ": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "Sparta Rotterdam",
+    "short_name": "SPA",
+    "aliases": ["Sparta", "SPA", "Sparta Rotterdam", "スパルタ・ロッテルダム"],
+    "common_typos": ["スパルタ", "すぱるた"],
+    "region_tags": ["オランダ", "ロッテルダム", "南ホラント"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "フォレンダム": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "FC Volendam",
+    "short_name": "VOL",
+    "aliases": ["Volendam", "VOL", "FC Volendam"],
+    "common_typos": ["フォレンダム", "ふぉれんだむ"],
+    "region_tags": ["オランダ", "フォレンダム", "北ホラント"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "エメン": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "FC Emmen",
+    "short_name": "EMM",
+    "aliases": ["Emmen", "EMM", "FC Emmen"],
+    "common_typos": ["エメン", "えめん"],
+    "region_tags": ["オランダ", "エメン", "ドレンテ"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "エクセルシオール": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "Excelsior Rotterdam",
+    "short_name": "EXC",
+    "aliases": ["Excelsior", "EXC", "Excelsior Rotterdam", "エクセルシオール"],
+    "common_typos": ["えくせるしおーる"],
+    "region_tags": ["オランダ", "ロッテルダム", "南ホラント"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "NACブレダ": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "NAC Breda",
+    "short_name": "NAC",
+    "aliases": ["NAC", "NAC Breda", "ブレダ", "NACブレダ"],
+    "common_typos": ["えぬえーしー"],
+    "region_tags": ["オランダ", "ブレダ", "北ブラバント"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "テルスター": {
+    "sport": "soccer",
+    "league": "Eredivisie",
+    "full_name": "SC Telstar",
+    "short_name": "TEL",
+    "aliases": ["Telstar", "TEL", "SC Telstar", "テルスター"],
+    "common_typos": ["てるすたー"],
+    "region_tags": ["オランダ", "ファイセン", "北ホラント"],
+    "active": true,
+    "confidence_boost": 0.1
+  }
+}

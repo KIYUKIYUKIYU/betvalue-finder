@@ -1,0 +1,512 @@
+{
+  "マンチェスターシティ": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Manchester City",
+    "short_name": "MCI",
+    "aliases": [
+      "マンシティ",
+      "Man City",
+      "City",
+      "MCI",
+      "Manchester City FC"
+    ],
+    "common_typos": [
+      "マンチェスター・シティ",
+      "まんしてぃ"
+    ],
+    "region_tags": [
+      "イングランド",
+      "マンチェスター"
+    ],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "マンチェスターユナイテッド": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Manchester United",
+    "short_name": "MUN",
+    "aliases": [
+      "マンU",
+      "Man Utd",
+      "United",
+      "MUN",
+      "Manchester United FC"
+    ],
+    "common_typos": [
+      "マンチェスター・ユナイテッド",
+      "まんゆー"
+    ],
+    "region_tags": [
+      "イングランド",
+      "マンチェスター"
+    ],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "リバプール": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Liverpool",
+    "short_name": "LIV",
+    "aliases": [
+      "Liverpool FC",
+      "LFC",
+      "LIV",
+      "レッズ"
+    ],
+    "common_typos": [
+      "リヴァプール",
+      "りばぷーる"
+    ],
+    "region_tags": [
+      "イングランド",
+      "リバプール"
+    ],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "チェルシー": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Chelsea",
+    "short_name": "CHE",
+    "aliases": [
+      "Chelsea FC",
+      "CHE",
+      "ブルース",
+      "Chelsea"
+    ],
+    "common_typos": [
+      "チェルシ",
+      "ちぇるしー"
+    ],
+    "region_tags": [
+      "イングランド",
+      "ロンドン"
+    ],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "アーセナル": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Arsenal",
+    "short_name": "ARS",
+    "aliases": [
+      "Arsenal FC",
+      "ARS",
+      "Gunners",
+      "ガナーズ",
+      "Arsenal"
+    ],
+    "common_typos": [
+      "アーセナール",
+      "あーせなる"
+    ],
+    "region_tags": [
+      "イングランド",
+      "ロンドン"
+    ],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "トッテナム": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Tottenham Hotspur",
+    "short_name": "TOT",
+    "aliases": [
+      "Tottenham",
+      "Spurs",
+      "TOT",
+      "スパーズ",
+      "トッテナム・ホットスパー"
+    ],
+    "common_typos": [
+      "トテナム",
+      "とっとなむ"
+    ],
+    "region_tags": [
+      "イングランド",
+      "ロンドン"
+    ],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "ニューカッスル": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Newcastle United",
+    "short_name": "NEW",
+    "aliases": [
+      "Newcastle",
+      "NEW",
+      "Magpies",
+      "マグパイズ",
+      "ニューカッスル・ユナイテッド"
+    ],
+    "common_typos": [
+      "ニューキャッスル",
+      "にゅーかっする"
+    ],
+    "region_tags": [
+      "イングランド",
+      "ニューカッスル"
+    ],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ブライトン": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Brighton & Hove Albion",
+    "short_name": "BHA",
+    "aliases": [
+      "Brighton",
+      "BHA",
+      "Seagulls",
+      "シーガルズ",
+      "ブライトン・アンド・ホーヴ・アルビオン",
+      "Brighton & Hove Albion"
+    ],
+    "common_typos": [
+      "ブライトン",
+      "ぶらいとん"
+    ],
+    "region_tags": [
+      "イングランド",
+      "ブライトン"
+    ],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "アストンビラ": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Aston Villa",
+    "short_name": "AVL",
+    "aliases": [
+      "Villa",
+      "AVL",
+      "Villans",
+      "ビラ",
+      "アストン・ヴィラ",
+      "Aston Villa"
+    ],
+    "common_typos": [
+      "アストン・ビラ",
+      "あすとんびら"
+    ],
+    "region_tags": [
+      "イングランド",
+      "バーミンガム"
+    ],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ウェストハム": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "West Ham United",
+    "short_name": "WHU",
+    "aliases": [
+      "West Ham",
+      "WHU",
+      "Hammers",
+      "ハマーズ",
+      "ウェストハム・ユナイテッド"
+    ],
+    "common_typos": [
+      "ウエストハム",
+      "うぇすとはむ"
+    ],
+    "region_tags": [
+      "イングランド",
+      "ロンドン"
+    ],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ウルバーハンプトン": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Wolverhampton Wanderers",
+    "short_name": "WOL",
+    "aliases": [
+      "Wolves",
+      "WOL",
+      "ウルブズ",
+      "ウルバーハンプトン・ワンダラーズ"
+    ],
+    "common_typos": [
+      "ウォルバーハンプトン",
+      "うるばーはんぷとん"
+    ],
+    "region_tags": [
+      "イングランド",
+      "ウルバーハンプトン"
+    ],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "クリスタルパレス": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Crystal Palace",
+    "short_name": "CRY",
+    "aliases": [
+      "Palace",
+      "CRY",
+      "Eagles",
+      "イーグルズ",
+      "クリスタル・パレス",
+      "Crystal Palace"
+    ],
+    "common_typos": [
+      "くりすたるぱれす"
+    ],
+    "region_tags": [
+      "イングランド",
+      "ロンドン"
+    ],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ノッティンガムフォレスト": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Nottingham Forest",
+    "short_name": "NFO",
+    "aliases": [
+      "Forest",
+      "NFO",
+      "Reds",
+      "ノッティンガム・フォレスト"
+    ],
+    "common_typos": [
+      "ノッテンガムフォレスト",
+      "のっていんがむふぉれすと"
+    ],
+    "region_tags": [
+      "イングランド",
+      "ノッティンガム"
+    ],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "レスター": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Leicester City",
+    "short_name": "LEI",
+    "aliases": [
+      "Leicester",
+      "LEI",
+      "Foxes",
+      "フォクシーズ",
+      "レスター・シティ"
+    ],
+    "common_typos": [
+      "レイセスター",
+      "れすたー"
+    ],
+    "region_tags": [
+      "イングランド",
+      "レスター"
+    ],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ボーンマス": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "AFC Bournemouth",
+    "short_name": "BOU",
+    "aliases": [
+      "Bournemouth",
+      "BOU",
+      "Cherries",
+      "チェリーズ",
+      "エーエフシー・ボーンマス",
+      "AFC Bournemouth"
+    ],
+    "common_typos": [
+      "ボンマス",
+      "ぼーんます"
+    ],
+    "region_tags": [
+      "イングランド",
+      "ボーンマス"
+    ],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "フラム": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Fulham",
+    "short_name": "FUL",
+    "aliases": [
+      "Fulham FC",
+      "FUL",
+      "Cottagers",
+      "コテージャーズ",
+      "Fulham"
+    ],
+    "common_typos": [
+      "フラハム",
+      "ふらむ"
+    ],
+    "region_tags": [
+      "イングランド",
+      "ロンドン"
+    ],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ブレントフォード": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Brentford",
+    "short_name": "BRE",
+    "aliases": [
+      "Brentford FC",
+      "BRE",
+      "Bees",
+      "ビーズ",
+      "Brentford"
+    ],
+    "common_typos": [
+      "ブレンドフォード",
+      "ぶれんとふぉーど"
+    ],
+    "region_tags": [
+      "イングランド",
+      "ロンドン"
+    ],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "エバートン": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Everton",
+    "short_name": "EVE",
+    "aliases": [
+      "Everton FC",
+      "EVE",
+      "Toffees",
+      "トフィーズ",
+      "エヴァートン",
+      "Everton"
+    ],
+    "common_typos": [
+      "えばーとん"
+    ],
+    "region_tags": [
+      "イングランド",
+      "リバプール"
+    ],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "サウサンプトン": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Southampton",
+    "short_name": "SOU",
+    "aliases": [
+      "Southampton FC",
+      "SOU",
+      "Saints",
+      "セインツ"
+    ],
+    "common_typos": [
+      "サウザンプトン",
+      "さうさんぷとん"
+    ],
+    "region_tags": [
+      "イングランド",
+      "サウサンプトン"
+    ],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "イプスウィッチ": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Ipswich Town",
+    "short_name": "IPS",
+    "aliases": [
+      "Ipswich",
+      "IPS",
+      "Tractor Boys",
+      "トラクター・ボーイズ",
+      "イプスウィッチ・タウン"
+    ],
+    "common_typos": [
+      "イプスイッチ",
+      "いぷすうぃっち"
+    ],
+    "region_tags": [
+      "イングランド",
+      "イプスウィッチ"
+    ],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "リーズ・ユナイテッド": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Leeds United",
+    "short_name": "LEE",
+    "aliases": [
+      "Leeds",
+      "LEE",
+      "リーズ",
+      "Leeds United"
+    ],
+    "common_typos": [],
+    "region_tags": [
+      "イングランド"
+    ],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "サンダーランド": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Sunderland",
+    "short_name": "SUN",
+    "aliases": [
+      "Sunderland AFC",
+      "SUN",
+      "Sunderland"
+    ],
+    "common_typos": [],
+    "region_tags": [
+      "イングランド"
+    ],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "バーンリー": {
+    "sport": "soccer",
+    "league": "Premier League",
+    "full_name": "Burnley",
+    "short_name": "BUR",
+    "aliases": [
+      "Burnley FC",
+      "BUR",
+      "Burnley"
+    ],
+    "common_typos": [],
+    "region_tags": [
+      "イングランド"
+    ],
+    "active": true,
+    "confidence_boost": 0.1
+  }
+}

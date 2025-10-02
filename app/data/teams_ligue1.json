@@ -1,0 +1,233 @@
+{
+  "パリサンジェルマン": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "Paris Saint-Germain",
+    "short_name": "PSG",
+    "aliases": ["PSG", "Paris SG", "パリSG", "パリ・サンジェルマン", "パリ・サンジェルマン"],
+    "common_typos": ["ぱりさんじぇるまん"],
+    "region_tags": ["フランス", "パリ", "イル・ド・フランス"],
+    "active": true,
+    "confidence_boost": 0.3
+  },
+  "マルセイユ": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "Olympique de Marseille",
+    "short_name": "OM",
+    "aliases": ["OM", "Marseille", "オリンピック・マルセイユ", "マルセイユ"],
+    "common_typos": ["マルセーユ", "まるせいゆ"],
+    "region_tags": ["フランス", "マルセイユ", "プロヴァンス・アルプ・コート・ダジュール"],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "リヨン": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "Olympique Lyonnais",
+    "short_name": "OL",
+    "aliases": ["OL", "Lyon", "オリンピック・リヨン", "リヨン"],
+    "common_typos": ["リオン", "りよん"],
+    "region_tags": ["フランス", "リヨン", "オーヴェルニュ・ローヌ・アルプ"],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "モナコ": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "AS Monaco",
+    "short_name": "ASM",
+    "aliases": ["AS Monaco", "ASM", "Monaco", "モナコ"],
+    "common_typos": ["もなこ"],
+    "region_tags": ["モナコ", "モンテカルロ"],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "リール": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "LOSC Lille",
+    "short_name": "LIL",
+    "aliases": ["Lille", "LIL", "LOSC", "LOSC Lille", "リール"],
+    "common_typos": ["りーる"],
+    "region_tags": ["フランス", "リール", "オー・ド・フランス"],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "レンヌ": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "Stade Rennais",
+    "short_name": "REN",
+    "aliases": ["Rennes", "REN", "Stade Rennais", "レンヌ"],
+    "common_typos": ["れんぬ"],
+    "region_tags": ["フランス", "レンヌ", "ブルターニュ"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ニース": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "OGC Nice",
+    "short_name": "NIC",
+    "aliases": ["Nice", "NIC", "OGC Nice", "ニース"],
+    "common_typos": ["にーす"],
+    "region_tags": ["フランス", "ニース", "プロヴァンス・アルプ・コート・ダジュール"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ストラスブール": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "RC Strasbourg",
+    "short_name": "STR",
+    "aliases": ["Strasbourg", "STR", "RC Strasbourg", "ストラスブール"],
+    "common_typos": ["すとらすぶーる"],
+    "region_tags": ["フランス", "ストラスブール", "グラン・テスト"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ランス": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "Stade de Reims",
+    "short_name": "SDR",
+    "aliases": ["Reims", "SDR", "Stade de Reims", "ランス"],
+    "common_typos": ["らんす"],
+    "region_tags": ["フランス", "ランス", "グラン・テスト"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ナント": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "FC Nantes",
+    "short_name": "NAN",
+    "aliases": ["Nantes", "NAN", "FC Nantes", "ナント"],
+    "common_typos": ["なんと"],
+    "region_tags": ["フランス", "ナント", "ペイ・ド・ラ・ロワール"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ブレスト": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "Stade Brestois",
+    "short_name": "BRE",
+    "aliases": ["Brest", "BRE", "Stade Brestois", "ブレスト"],
+    "common_typos": ["ぶれすと"],
+    "region_tags": ["フランス", "ブレスト", "ブルターニュ"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "モンペリエ": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "Montpellier HSC",
+    "short_name": "MON",
+    "aliases": ["Montpellier", "MON", "MHSC"],
+    "common_typos": ["モンペリエ", "もんぺりえ"],
+    "region_tags": ["フランス", "モンペリエ", "オクシタニー"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ル・アーヴル": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "Le Havre AC",
+    "short_name": "HAC",
+    "aliases": ["Le Havre", "HAC", "Le Havre AC", "ル・アーヴル"],
+    "common_typos": ["ル・アーブル", "る・あーぶる"],
+    "region_tags": ["フランス", "ル・アーヴル", "ノルマンディー"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "トゥールーズ": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "Toulouse FC",
+    "short_name": "TOU",
+    "aliases": ["Toulouse", "TOU", "TFC", "トゥールーズ"],
+    "common_typos": ["トゥルーズ", "とぅーるーず"],
+    "region_tags": ["フランス", "トゥールーズ", "オクシタニー"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "アンジェ": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "Angers SCO",
+    "short_name": "ANG",
+    "aliases": ["Angers", "ANG", "SCO", "アンジェ"],
+    "common_typos": ["あんじぇ"],
+    "region_tags": ["フランス", "アンジェ", "ペイ・ド・ラ・ロワール"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "オセール": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "AJ Auxerre",
+    "short_name": "AUX",
+    "aliases": ["Auxerre", "AUX", "AJ Auxerre", "オセール"],
+    "common_typos": ["おせーる"],
+    "region_tags": ["フランス", "オセール", "ブルゴーニュ・フランシュ・コンテ"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "サンテティエンヌ": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "AS Saint-Etienne",
+    "short_name": "STE",
+    "aliases": ["Saint-Etienne", "STE", "ASSE", "サンテティエンヌ"],
+    "common_typos": ["サン・テティエンヌ", "さんててぃえんぬ"],
+    "region_tags": ["フランス", "サンテティエンヌ", "オーヴェルニュ・ローヌ・アルプ"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ボルドー": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "FC Girondins de Bordeaux",
+    "short_name": "BOR",
+    "aliases": ["Bordeaux", "BOR", "Girondins"],
+    "common_typos": ["ボルドー", "ぼるどー"],
+    "region_tags": ["フランス", "ボルドー", "ヌーヴェル・アキテーヌ"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ロリアン": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "FC Lorient",
+    "short_name": "LOR",
+    "aliases": ["Lorient", "LOR", "FC Lorient", "ロリアン"],
+    "common_typos": ["ろりあん"],
+    "region_tags": ["フランス", "ロリアン", "ブルターニュ"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "メス": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "FC Metz",
+    "short_name": "MET",
+    "aliases": ["Metz", "MET", "FC Metz", "メス"],
+    "common_typos": ["めす"],
+    "region_tags": ["フランス", "メス", "グラン・テスト"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "パリFC": {
+    "sport": "soccer",
+    "league": "Ligue 1",
+    "full_name": "Paris FC",
+    "short_name": "PFC",
+    "aliases": ["Paris FC", "PFC", "パリFC"],
+    "common_typos": ["ぱりFC", "ぱりえふしー"],
+    "region_tags": ["フランス", "パリ", "イル・ド・フランス"],
+    "active": true,
+    "confidence_boost": 0.1
+  }
+}

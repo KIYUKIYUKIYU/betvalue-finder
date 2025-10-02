@@ -1,0 +1,222 @@
+{
+  "クラブブルッヘ": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "Club Brugge",
+    "short_name": "BRU",
+    "aliases": ["Club Brugge", "BRU", "ブルッヘ", "ブルージュ", "クラブB", "クラブ・ブルッヘ"],
+    "common_typos": ["くらぶぶるっへ"],
+    "region_tags": ["ベルギー", "ブルッヘ", "西フランデレン"],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "アンデルレヒト": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "RSC Anderlecht",
+    "short_name": "AND",
+    "aliases": ["Anderlecht", "AND", "RSC Anderlecht", "アンデルレヒト"],
+    "common_typos": ["あんでるれひと"],
+    "region_tags": ["ベルギー", "ブリュッセル"],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "ヘント": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "KAA Gent",
+    "short_name": "GEN",
+    "aliases": ["Gent", "GEN", "KAA Gent", "ヘント"],
+    "common_typos": ["へんと"],
+    "region_tags": ["ベルギー", "ヘント", "東フランデレン"],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "スタンダールリエージュ": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "Standard Liege",
+    "short_name": "STL",
+    "aliases": ["Standard", "STL", "Standard Liege", "スタンダール・リエージュ"],
+    "common_typos": ["すたんだーるりえーじゅ"],
+    "region_tags": ["ベルギー", "リエージュ", "リエージュ州"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ロイヤルアントワープ": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "Royal Antwerp",
+    "short_name": "ANT",
+    "aliases": ["Antwerp", "ANT", "Royal Antwerp", "ロイヤル・アントワープ", "アントワープ"],
+    "common_typos": ["ろいやるあんとわーぷ"],
+    "region_tags": ["ベルギー", "アントワープ"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ゲンク": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "KRC Genk",
+    "short_name": "GNK",
+    "aliases": ["Genk", "GNK", "KRC Genk", "ヘンク"],
+    "common_typos": ["ゲンク", "げんく"],
+    "region_tags": ["ベルギー", "ゲンク", "リンブルク"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ユニオンサンジロワーズ": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "Union Saint-Gilloise",
+    "short_name": "USG",
+    "aliases": ["Union", "USG", "Union Saint-Gilloise", "ユニオン・サンジロワーズ", "サン＝ジロワーズ", "ユニオンSG"],
+    "common_typos": ["ゆにおんさんじろわーず"],
+    "region_tags": ["ベルギー", "ブリュッセル"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "シャルルロワ": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "Sporting Charleroi",
+    "short_name": "CHA",
+    "aliases": ["Charleroi", "CHA", "Sporting Charleroi", "シャルルロワ"],
+    "common_typos": ["しゃるるろわ"],
+    "region_tags": ["ベルギー", "シャルルロワ", "エノー州"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "サークルブルッヘ": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "Cercle Brugge",
+    "short_name": "CER",
+    "aliases": ["Cercle", "CER", "Cercle Brugge", "サークル・ブルッヘ", "セルクル・ブルッヘ"],
+    "common_typos": ["さーくるぶるっへ"],
+    "region_tags": ["ベルギー", "ブルッヘ", "西フランデレン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "メヘレン": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "KV Mechelen",
+    "short_name": "MEC",
+    "aliases": ["Mechelen", "MEC", "KV Mechelen", "メヘレン"],
+    "common_typos": ["めへれん"],
+    "region_tags": ["ベルギー", "メヘレン", "アントワープ州"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "コルトライク": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "KV Kortrijk",
+    "short_name": "KOR",
+    "aliases": ["Kortrijk", "KOR", "KV Kortrijk"],
+    "common_typos": ["コルトライク", "こるとらいく"],
+    "region_tags": ["ベルギー", "コルトライク", "西フランデレン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "オイペン": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "KAS Eupen",
+    "short_name": "EUP",
+    "aliases": ["Eupen", "EUP", "KAS Eupen"],
+    "common_typos": ["オイペン", "おいぺん"],
+    "region_tags": ["ベルギー", "オイペン", "リエージュ州"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ワースラント・ベフェレン": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "Waasland-Beveren",
+    "short_name": "WAA",
+    "aliases": ["Waasland", "WAA", "Waasland-Beveren", "ワースラント"],
+    "common_typos": ["ワースラント・ベフェレン", "わーすらんとべふぇれん"],
+    "region_tags": ["ベルギー", "ベフェレン", "東フランデレン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ズルテ・ワレヘム": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "Zulte Waregem",
+    "short_name": "ZUL",
+    "aliases": ["Zulte", "ZUL", "Zulte Waregem", "ズルテ", "ズルテ・ワレヘム"],
+    "common_typos": ["ずるてわれへむ"],
+    "region_tags": ["ベルギー", "ワレヘム", "西フランデレン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "セント・トロイデン": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "Sint-Truiden",
+    "short_name": "STT",
+    "aliases": ["Sint-Truiden", "STT", "セント・トロイデン", "シント＝トロイデン"],
+    "common_typos": ["せんととろいでん"],
+    "region_tags": ["ベルギー", "シント・トロイデン", "リンブルク"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "オーストエンデ": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "KV Oostende",
+    "short_name": "OOS",
+    "aliases": ["Oostende", "OOS", "KV Oostende"],
+    "common_typos": ["オーストエンデ", "おーすとえんで"],
+    "region_tags": ["ベルギー", "オーストエンデ", "西フランデレン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ウェステルロー": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "KVC Westerlo",
+    "short_name": "WES",
+    "aliases": ["Westerlo", "KVC Westerlo", "ウェステルロ"],
+    "common_typos": [],
+    "region_tags": ["ベルギー", "ウェステルロー"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "デンデルEH": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "FCV Dender",
+    "short_name": "DEN",
+    "aliases": ["Dender", "DEN", "FCV Dender", "デンデルEH"],
+    "common_typos": [],
+    "region_tags": ["ベルギー", "デンデル"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ラ・ルヴィエール": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "La Louviere",
+    "short_name": "LLO",
+    "aliases": ["La Louviere", "LLO", "ラ・ルヴィエール"],
+    "common_typos": [],
+    "region_tags": ["ベルギー", "ラ・ルヴィエール"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "OHルーヴェン": {
+    "sport": "soccer",
+    "league": "Jupiler Pro League",
+    "full_name": "OH Leuven",
+    "short_name": "OHL",
+    "aliases": ["OH Leuven", "OHL", "Leuven", "OHルーヴェン"],
+    "common_typos": [],
+    "region_tags": ["ベルギー", "ルーヴェン"],
+    "active": true,
+    "confidence_boost": 0.1
+  }
+}

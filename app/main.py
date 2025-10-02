@@ -1,474 +1,149 @@
 # -*- coding: utf-8 -*-
-"""
-app/main.py
-BetValue Finder API - MLB/サッカー対応版
-モジュール化されたオッズ処理とEV評価を使用
-"""
-
-from __future__ import annotations
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, HTMLResponse
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict
 import os
-import sys
-import json
-import datetime as dt
-import re
 import logging
-from app.universal_parser import UniversalBetParser
+import asyncio
 
-# プロジェクトルートをパスに追加
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# ロギングシステムの初期化
+from app.logging_system import log_manager
+from app.middleware.logging_middleware import setup_logging_middleware
+from app.pipeline_orchestrator import BettingPipelineOrchestrator
+from app.api.logging_endpoints import router as logging_router
 
-# 既存のconverterモジュール
-from app.converter import jp_to_pinnacle, pinnacle_to_jp, try_parse_jp
+app = FastAPI(title="BetValue Finder API", version="4.0.0")
 
-# 新しいモジュール
-from converter.odds_processor import OddsProcessor
-from converter.ev_evaluator import EVEvaluator
-from game_manager.mlb import MLBGameManager
+# ログミドルウェアの設定
+setup_logging_middleware(app)
 
-# ロガー設定
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+# ログAPI エンドポイントの追加
+app.include_router(logging_router)
 
-app = FastAPI(title="BetValue Finder API", version="2.0.1")
+# 静的ファイルの設定
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-# CORS設定
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# 静的ファイル配信
-static_dir = os.path.join(os.path.dirname(__file__), "static")
-if not os.path.exists(static_dir):
-    os.makedirs(static_dir)
-
-if os.path.exists(static_dir):
-    app.mount("/static", StaticFiles(directory=static_dir), name="static")
-
-# --- 定数 ---
-MLB_API_BASE = "https://v1.baseball.api-sports.io"
-SOCCER_API_BASE = "https://v3.football.api-sports.io"
-MLB_LEAGUE_ID = 1
-SOCCER_LEAGUES = {
-    39: "Premier League",
-    140: "La Liga",
-    78: "Bundesliga",
-    135: "Serie A",
-    61: "Ligue 1",
-}
-
-PINNACLE_ID = 4
-BET365_ID = 2
-
-# --- モデル ---
-class MapRequest(BaseModel):
-    jp: Optional[str] = None
-    pinn: Optional[float] = None
+# Pipeline Orchestrator の初期化（API keyは実行時に設定）
+def get_pipeline():
+    api_key = os.environ.get("API_SPORTS_KEY", "test_api_key")
+    return BettingPipelineOrchestrator(api_key=api_key)
 
 class AnalyzePasteRequest(BaseModel):
-    text: str
-    sport: str = "auto"  # auto/mlb/soccer
-    rakeback: float = 0.015
-    jp_odds: float = 1.9
-    date: Optional[str] = None
+    paste_text: str  # Changed from 'text' to 'paste_text' to match frontend
+    sport_hint: Optional[str] = "mixed"
+    jp_odds: Optional[float] = 1.9
+    rakeback: Optional[float] = 0.0
+
+class TeamOdds(BaseModel):
+    raw_pinnacle_odds: Optional[float] = None
+    fair_odds: Optional[float] = None
+    ev_percentage: Optional[float] = None
+    verdict: Optional[str] = None
 
 class GameEvaluation(BaseModel):
-    team_a: str
-    team_b: str
-    team_a_jp: str
-    team_b_jp: str
-    fav_team: Optional[str] = None
-    fav_team_jp: Optional[str] = None
+    # Game Info
+    game_date: Optional[str] = None
+    sport: Optional[str] = None
+    home_team_jp: Optional[str] = None
+    away_team_jp: Optional[str] = None
+    
+    # Match Info
+    match_confidence: Optional[float] = None
+    
+    # Line Info
     jp_line: Optional[str] = None
     pinnacle_line: Optional[float] = None
-    # フェイバリット側の評価
-    fav_fair_prob: Optional[float] = None
-    fav_fair_odds: Optional[float] = None
-    fav_ev_pct: Optional[float] = None
-    fav_ev_pct_rake: Optional[float] = None
-    fav_eff_odds: Optional[float] = None
-    fav_verdict: Optional[str] = None
-    # アンダードッグ側の評価
-    dog_fair_prob: Optional[float] = None
-    dog_fair_odds: Optional[float] = None
-    dog_ev_pct: Optional[float] = None
-    dog_ev_pct_rake: Optional[float] = None
-    dog_eff_odds: Optional[float] = None
-    dog_verdict: Optional[str] = None
-    # 推奨とエラー
-    recommended_side: Optional[str] = None  # "favorite", "underdog", "none"
+    fav_team: Optional[str] = None
+
+    # Team-specific results
+    home_team_odds: TeamOdds
+    away_team_odds: TeamOdds
+
+    # Metadata
     error: Optional[str] = None
-    error_code: Optional[str] = None
-
-class EvaluateOddsRequest(BaseModel):
-    game_id: str
-    jp_line: str
-    side: str = "home"  # home/away
-    rakeback: float = 0.0
-    jp_odds: float = 1.9
-
-class BestLinesRequest(BaseModel):
-    game_id: str
-    top_n: int = 3
-    min_ev: Optional[float] = None
-    rakeback: float = 0.0
-    jp_odds: float = 1.9
-
-# --- ユーティリティ ---
-def get_api_key() -> str:
-    """APIキーを取得"""
-    key = os.environ.get("API_SPORTS_KEY", "").strip()
-    if not key:
-        raise HTTPException(status_code=500, detail="API_SPORTS_KEY not configured")
-    return key
-
-def detect_sport(text: str) -> str:
-    """テキストから競技を自動判定"""
-    # サッカーのキーワード
-    soccer_keywords = [
-        "パレス", "フォレスト", "シティ", "ユナイテッド", "チェルシー",
-        "リバプール", "アーセナル", "バルセロナ", "レアル", "バイエルン",
-        "ユベントス", "ミラン", "パリ", "0/3", "0/5", "0/7"
-    ]
-
-    # MLBのキーワード
-    mlb_keywords = [
-        "ヤンキース", "レッドソックス", "ドジャース", "ジャイアンツ",
-        "カブス", "メッツ", "エンゼルス", "アストロズ", "ブレーブス"
-    ]
-
-    text_lower = text.lower()
-
-    # キーワードチェック
-    for keyword in soccer_keywords:
-        if keyword.lower() in text_lower:
-            return "soccer"
-
-    for keyword in mlb_keywords:
-        if keyword.lower() in text_lower:
-            return "mlb"
-
-    # デフォルトはMLB
-    return "mlb"
-
-def parse_paste_text(text: str, sport: str = "auto") -> List[Dict]:
-    """汎用パーサーを使用した貼り付けテキスト解析"""
-    
-    if sport == "auto":
-        sport = detect_sport(text)
-        logging.info(f"Auto-detected sport: {sport}")
-    
-    # 汎用パーサーで解析
-    parser = UniversalBetParser()
-    parsed_games = parser.parse(text)
-    
-    # 既存のフォーマットに変換
-    games = []
-    for pg in parsed_games:
-        game = {
-            "team_a": pg.get('team_a'),
-            "team_a_jp": pg.get('team_a'),
-            "team_b": pg.get('team_b'),
-            "team_b_jp": pg.get('team_b'),
-        }
-        
-        if pg.get('handicap'):
-            # ハンデをピナクル値に変換
-            ok, pinn = try_parse_jp(pg['handicap'])
-            if ok:
-                game["fav_line_pinnacle"] = pinn
-                game["jp_line"] = pg['handicap']
-                
-                # フェイバリット側を判定
-                if pg.get('fav_team') == pg.get('team_a'):
-                    game["fav_side"] = "a"
-                elif pg.get('fav_team') == pg.get('team_b'):
-                    game["fav_side"] = "b"
-        
-        games.append(game)
-    
-    return games
-
-# --- エンドポイント ---
+    processing_time: Optional[float] = None
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
-    """ルート：index.htmlを返す"""
-    index_path = os.path.join(static_dir, "index.html")
-    if os.path.exists(index_path):
-        return FileResponse(index_path, media_type="text/html")
-
-    # index.htmlがない場合は簡単なメッセージ
-    return HTMLResponse(content="""
-    <html>
-        <head><title>BetValue Finder</title></head>
-        <body>
-            <h1>BetValue Finder API v2.0</h1>
-            <p>API is running with modularized odds processing and EV evaluation.</p>
-            <p><a href="/docs">API Documentation</a></p>
-        </body>
-    </html>
-    """)
-
-@app.post("/map")
-async def map_endpoint(req: MapRequest):
-    """日本式⇔ピナクル値の相互変換"""
-    if req.jp:
-        ok, pinn = try_parse_jp(req.jp)
-        if not ok:
-            return {"error": f"未対応の日本式表記: {req.jp}"}
-        return {"jp": req.jp, "pinnacle": pinn}
-
-    if req.pinn is not None:
-        try:
-            jp = pinnacle_to_jp(req.pinn)
-            return {"pinnacle": req.pinn, "jp": jp}
-        except Exception as e:
-            return {"error": str(e)}
-
-    return {"error": "jp または pinn のどちらかを指定してください"}
+    html_path = os.path.join("app", "static", "index.html")
+    try:
+        with open(html_path, 'r', encoding='utf-8') as f:
+            return HTMLResponse(content=f.read())
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>BetValue Finder API v4.0</h1><p>Complete pipeline integration with enhanced parsing, team mapping, game matching, odds fetching, and EV calculation.</p><a href='/docs'>API Docs</a>")
 
 @app.post("/analyze_paste", response_model=List[GameEvaluation])
 async def analyze_paste_endpoint(req: AnalyzePasteRequest):
-    """貼り付けテキストを解析してEV計算（両側評価版）"""
+    api_key = os.environ.get("API_SPORTS_KEY")
+    if not api_key:
+        log_manager.log_error("API configuration error", Exception("API_SPORTS_KEY not configured"))
+        raise HTTPException(status_code=500, detail="API_SPORTS_KEY not configured")
+
     try:
-        # APIキー取得
-        api_key = get_api_key()
+        log_manager.main_logger.info(f"📝 Analyze request received: text length {len(req.paste_text)}")
 
-        # テキストをパース
-        games = parse_paste_text(req.text, req.sport)
-
-        if not games:
-            raise HTTPException(status_code=400, detail="試合データが見つかりません")
-
-        # GameManagerとモジュール初期化
-        mlb_manager = MLBGameManager(api_key)
-        odds_processor = OddsProcessor()
-        ev_evaluator = EVEvaluator(jp_odds=req.jp_odds, rakeback=req.rakeback)
-
-        results = []
-
-        for game in games:
-            # 基本的な評価結果を作成
-            eval_result = GameEvaluation(
-                team_a=game["team_a"],
-                team_b=game["team_b"],
-                team_a_jp=game.get("team_a_jp", game["team_a"]),
-                team_b_jp=game.get("team_b_jp", game["team_b"])
+        # Validate input
+        if not req.paste_text or not req.paste_text.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="試合データが入力されていません。テキストを貼り付けてください。"
             )
 
-            # 試合を検索
-            matched_game = mlb_manager.match_teams([game["team_a"], game["team_b"]])
+        # Initialize pipeline with API key
+        pipeline = get_pipeline()
 
-            if not matched_game:
-                eval_result.error = "試合が見つかりません"
-                eval_result.error_code = "GAME_NOT_FOUND"
-                results.append(eval_result)
-                continue
+        # Execute complete pipeline with timeout
+        pipeline_result = await asyncio.wait_for(
+            pipeline.execute_pipeline(
+                customer_text=req.paste_text,
+                sport_hint=req.sport_hint or "mixed",  # Use provided sport hint or auto-detect
+                jp_odds=req.jp_odds,
+                rakeback=req.rakeback
+            ),
+            timeout=60.0  # 60 second timeout
+        )
 
-            # フェイバリット側の処理
-            if game.get("fav_side") and game.get("fav_line_pinnacle"):
-                if game["fav_side"] == "a":
-                    eval_result.fav_team = game["team_a"]
-                    eval_result.fav_team_jp = game["team_a_jp"]
-                    fav_side = "home" if matched_game["home"] == eval_result.fav_team else "away"
-                    dog_team = game["team_b"]
-                    dog_team_jp = game["team_b_jp"]
-                else:
-                    eval_result.fav_team = game["team_b"]
-                    eval_result.fav_team_jp = game["team_b_jp"]
-                    fav_side = "home" if matched_game["home"] == eval_result.fav_team else "away"
-                    dog_team = game["team_a"]
-                    dog_team_jp = game["team_a_jp"]
+        # Convert pipeline results to API response format
+        results = []
+        final_games = getattr(pipeline_result, 'games_processed', [])
+        for game in final_games:
+            # The 'game' dict now has the new structure from the orchestrator
+            game_data = {
+                "game_date": game.get("game_date"),
+                "sport": game.get("sport"),
+                "home_team_jp": game.get("home_team_jp"),
+                "away_team_jp": game.get("away_team_jp"),
+                "match_confidence": game.get("match_confidence"),
+                "jp_line": game.get("jp_line"),
+                "pinnacle_line": game.get("pinnacle_line"),
+                "fav_team": game.get("fav_team"),
+                "home_team_odds": game.get("home_team_odds"),
+                "away_team_odds": game.get("away_team_odds"),
+                "error": game.get("error"),
+                "processing_time": pipeline_result.total_time,
+            }
+            results.append(GameEvaluation(**game_data))
 
-                eval_result.jp_line = game.get("jp_line")
-                eval_result.pinnacle_line = game["fav_line_pinnacle"]
-
-                # アンダードッグ側を判定
-                dog_side = "away" if fav_side == "home" else "home"
-
-                # オッズを取得
-                odds_data = mlb_manager.fetch_odds(matched_game["id"])
-
-                if not odds_data:
-                    eval_result.error = "オッズが取得できません"
-                    eval_result.error_code = "NO_ODDS"
-                    results.append(eval_result)
-                    continue
-
-                # オッズを処理
-                line_data = odds_processor.prepare_line_data(odds_data)
-
-                if not line_data:
-                    eval_result.error = "ハンデオッズが見つかりません"
-                    eval_result.error_code = "NO_HANDICAP_ODDS"
-                    results.append(eval_result)
-                    continue
-
-                # フェイバリット側のEV評価（マイナスライン）
-                fav_evaluation = ev_evaluator.evaluate_single_line(
-                    line_data,
-                    -eval_result.pinnacle_line,  # フェイバリットはマイナス
-                    fav_side
-                )
-
-                # アンダードッグ側のEV評価（プラスライン）
-                dog_evaluation = ev_evaluator.evaluate_single_line(
-                    line_data,
-                    eval_result.pinnacle_line,  # アンダードッグはプラス
-                    dog_side
-                )
-
-                # フェイバリット側の結果を設定
-                eval_result.fav_fair_prob = fav_evaluation.get("fair_prob")
-                eval_result.fav_fair_odds = fav_evaluation.get("fair_odds")
-                eval_result.fav_ev_pct = fav_evaluation.get("ev_pct")
-                eval_result.fav_ev_pct_rake = fav_evaluation.get("ev_pct_rake")
-                eval_result.fav_eff_odds = fav_evaluation.get("eff_odds")
-                eval_result.fav_verdict = fav_evaluation.get("verdict")
-
-                # アンダードッグ側の結果を設定
-                eval_result.dog_fair_prob = dog_evaluation.get("fair_prob")
-                eval_result.dog_fair_odds = dog_evaluation.get("fair_odds")
-                eval_result.dog_ev_pct = dog_evaluation.get("ev_pct")
-                eval_result.dog_ev_pct_rake = dog_evaluation.get("ev_pct_rake")
-                eval_result.dog_eff_odds = dog_evaluation.get("eff_odds")
-                eval_result.dog_verdict = dog_evaluation.get("verdict")
-
-                # 推奨側を決定（EVが高い方）
-                if eval_result.fav_ev_pct_rake and eval_result.dog_ev_pct_rake:
-                    if eval_result.fav_ev_pct_rake > eval_result.dog_ev_pct_rake:
-                        eval_result.recommended_side = "favorite"
-                    elif eval_result.dog_ev_pct_rake > eval_result.fav_ev_pct_rake:
-                        eval_result.recommended_side = "underdog"
-                    else:
-                        eval_result.recommended_side = "none"
-                
-                # エラーチェック
-                if fav_evaluation.get("error") or dog_evaluation.get("error"):
-                    eval_result.error = f"評価エラー: {fav_evaluation.get('error', '')} {dog_evaluation.get('error', '')}"
-                    eval_result.error_code = "EVALUATION_ERROR"
-            else:
-                eval_result.error = "ハンデが指定されていません"
-                eval_result.error_code = "NO_HANDICAP"
-
-            results.append(eval_result)
+        total_time = getattr(pipeline_result, 'total_time', 0.0)
+        stages_completed = getattr(pipeline_result, 'stages_completed', [])
+        log_manager.main_logger.info(f"✅ Pipeline processed {len(results)} games in {total_time:.2f}s "
+                    f"with {len(stages_completed)}/6 stages successful")
 
         return results
 
+    except asyncio.TimeoutError:
+        log_manager.log_error("Pipeline timeout", Exception("Pipeline execution exceeded 60 seconds"))
+        raise HTTPException(status_code=408, detail="Request timeout: Analysis took too long")
+    except ValueError as ve:
+        # ユーザー入力エラー（チーム名認識失敗など）
+        log_manager.main_logger.warning(f"⚠️ User input error: {str(ve)}")
+        raise HTTPException(status_code=400, detail=str(ve))
     except HTTPException:
+        # Re-raise HTTP exceptions (like 400 for empty input)
         raise
     except Exception as e:
-        logging.error(f"Error in analyze_paste: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/evaluate_odds")
-async def evaluate_odds_endpoint(req: EvaluateOddsRequest):
-    """特定ゲーム・ラインのEV評価"""
-    try:
-        api_key = get_api_key()
-
-        # GameManagerとモジュール初期化
-        mlb_manager = MLBGameManager(api_key)
-        odds_processor = OddsProcessor()
-        ev_evaluator = EVEvaluator(jp_odds=req.jp_odds, rakeback=req.rakeback)
-
-        # オッズ取得
-        odds_data = mlb_manager.fetch_odds(req.game_id)
-
-        if not odds_data:
-            raise HTTPException(status_code=404, detail="Odds not found for this game")
-
-        # オッズを処理
-        line_data = odds_processor.prepare_line_data(odds_data)
-
-        if not line_data:
-            raise HTTPException(status_code=404, detail="No handicap odds available")
-
-        # 日本式をピナクル値に変換
-        ok, pinnacle_value = try_parse_jp(req.jp_line)
-        if not ok:
-            raise HTTPException(status_code=400, detail=f"Invalid JP line: {req.jp_line}")
-
-        # EV評価
-        result = ev_evaluator.evaluate_single_line(
-            line_data,
-            pinnacle_value,
-            req.side
-        )
-
-        return result
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logging.error(f"Error in evaluate_odds: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/find_best_lines")
-async def find_best_lines_endpoint(req: BestLinesRequest):
-    """特定ゲームの最良ラインを検索"""
-    try:
-        api_key = get_api_key()
-
-        # GameManagerとモジュール初期化
-        mlb_manager = MLBGameManager(api_key)
-        odds_processor = OddsProcessor()
-        ev_evaluator = EVEvaluator(jp_odds=req.jp_odds, rakeback=req.rakeback)
-
-        # オッズ取得
-        odds_data = mlb_manager.fetch_odds(req.game_id)
-
-        if not odds_data:
-            raise HTTPException(status_code=404, detail="Odds not found for this game")
-
-        # オッズを処理
-        line_data = odds_processor.prepare_line_data(odds_data)
-
-        if not line_data:
-            raise HTTPException(status_code=404, detail="No handicap odds available")
-
-        # 最良ラインを検索
-        best_lines = ev_evaluator.find_best_lines(
-            line_data,
-            top_n=req.top_n,
-            min_ev=req.min_ev
-        )
-
-        return best_lines
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logging.error(f"Error in find_best_lines: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/health")
-async def health_check():
-    """ヘルスチェック"""
-    return {
-        "status": "healthy",
-        "version": "2.0.1",
-        "modules": {
-            "odds_processor": "OK",
-            "ev_evaluator": "OK",
-            "game_manager": "OK"
-        },
-        "timestamp": dt.datetime.utcnow().isoformat()
-    }
-
-# メイン実行
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8002)
+        log_manager.log_error("Pipeline execution failed in API endpoint", e)
+        error_detail = f"Analysis failed: {str(e)[:200]}..."  # Truncate long error messages
+        raise HTTPException(status_code=500, detail=error_detail)

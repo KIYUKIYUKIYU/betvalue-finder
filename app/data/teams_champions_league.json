@@ -1,0 +1,200 @@
+{
+  "レッドブル・ザルツブルク": {
+    "sport": "soccer",
+    "league": "Champions League",
+    "full_name": "RB Salzburg",
+    "short_name": "SAL",
+    "aliases": ["Salzburg", "SAL", "RB Salzburg", "ザルツブルク"],
+    "common_typos": ["レッドブル・ザルツブルク", "れっどぶるざるつぶるく"],
+    "region_tags": ["オーストリア", "ザルツブルク"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ディナモ・ザグレブ": {
+    "sport": "soccer",
+    "league": "Champions League",
+    "full_name": "Dinamo Zagreb",
+    "short_name": "DZA",
+    "aliases": ["Dinamo", "DZA", "Dinamo Zagreb", "ザグレブ"],
+    "common_typos": ["ディナモ・ザグレブ", "でぃなもざぐれぶ"],
+    "region_tags": ["クロアチア", "ザグレブ"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "シャフタール・ドネツク": {
+    "sport": "soccer",
+    "league": "Champions League",
+    "full_name": "Shakhtar Donetsk",
+    "short_name": "SHA",
+    "aliases": ["Shakhtar", "SHA", "シャフタール"],
+    "common_typos": ["シャフタール・ドネツク", "しゃふたーるどねつく"],
+    "region_tags": ["ウクライナ", "ドネツク"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ディナモ・キエフ": {
+    "sport": "soccer",
+    "league": "Champions League",
+    "full_name": "Dynamo Kyiv",
+    "short_name": "DKI",
+    "aliases": ["Dynamo", "DKI", "Dynamo Kyiv", "キエフ"],
+    "common_typos": ["ディナモ・キエフ", "でぃなもきえふ"],
+    "region_tags": ["ウクライナ", "キエフ"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "スパルタク・モスクワ": {
+    "sport": "soccer",
+    "league": "Champions League",
+    "full_name": "Spartak Moscow",
+    "short_name": "SPA",
+    "aliases": ["Spartak", "SPA", "スパルタク"],
+    "common_typos": ["スパルタク・モスクワ", "すぱるたくもすくわ"],
+    "region_tags": ["ロシア", "モスクワ"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ツルヴェナ・ズベズダ": {
+    "sport": "soccer",
+    "league": "Champions League",
+    "full_name": "Red Star Belgrade",
+    "short_name": "RSB",
+    "aliases": ["Red Star", "RSB", "レッドスター", "ベオグラード"],
+    "common_typos": ["ツルヴェナ・ズベズダ", "つるべなずべずだ"],
+    "region_tags": ["セルビア", "ベオグラード"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ヤングボーイズ": {
+    "sport": "soccer",
+    "league": "Champions League",
+    "full_name": "Young Boys Bern",
+    "short_name": "YBO",
+    "aliases": ["Young Boys", "YBO", "ベルン"],
+    "common_typos": ["ヤングボーイズ", "やんぐぼーいず"],
+    "region_tags": ["スイス", "ベルン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "バーゼル": {
+    "sport": "soccer",
+    "league": "Champions League",
+    "full_name": "FC Basel",
+    "short_name": "BAS",
+    "aliases": ["Basel", "BAS", "FC Basel"],
+    "common_typos": ["バーゼル", "ばーぜる"],
+    "region_tags": ["スイス", "バーゼル"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "オリンピアコス": {
+    "sport": "soccer",
+    "league": "Champions League",
+    "full_name": "Olympiacos",
+    "short_name": "OLY",
+    "aliases": ["Olympiacos", "OLY"],
+    "common_typos": ["オリンピアコス", "おりんぴあこす"],
+    "region_tags": ["ギリシャ", "ピレウス"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "パナシナイコス": {
+    "sport": "soccer",
+    "league": "Champions League",
+    "full_name": "Panathinaikos",
+    "short_name": "PAN",
+    "aliases": ["Panathinaikos", "PAN"],
+    "common_typos": ["パナシナイコス", "ぱなしないこす"],
+    "region_tags": ["ギリシャ", "アテネ"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ガラタサライ": {
+    "sport": "soccer",
+    "league": "Champions League",
+    "full_name": "Galatasaray",
+    "short_name": "GAL",
+    "aliases": ["Galatasaray", "GAL"],
+    "common_typos": ["ガラタサライ", "がらたさらい"],
+    "region_tags": ["トルコ", "イスタンブール"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "フェネルバフチェ": {
+    "sport": "soccer",
+    "league": "Champions League",
+    "full_name": "Fenerbahce",
+    "short_name": "FEN",
+    "aliases": ["Fenerbahce", "FEN"],
+    "common_typos": ["フェネルバフチェ", "ふぇねるばふちぇ"],
+    "region_tags": ["トルコ", "イスタンブール"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ベシクタシュ": {
+    "sport": "soccer",
+    "league": "Champions League",
+    "full_name": "Besiktas",
+    "short_name": "BES",
+    "aliases": ["Besiktas", "BES"],
+    "common_typos": ["ベシクタシュ", "べしくたしゅ"],
+    "region_tags": ["トルコ", "イスタンブール"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ロコモティフ・モスクワ": {
+    "sport": "soccer",
+    "league": "Champions League",
+    "full_name": "Lokomotiv Moscow",
+    "short_name": "LOK",
+    "aliases": ["Lokomotiv", "LOK", "ロコモティフ"],
+    "common_typos": ["ロコモティフ・モスクワ", "ろこもてぃふもすくわ"],
+    "region_tags": ["ロシア", "モスクワ"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "マッカビ・ハイファ": {
+    "sport": "soccer",
+    "league": "Champions League",
+    "full_name": "Maccabi Haifa",
+    "short_name": "MAC",
+    "aliases": ["Maccabi", "MAC", "ハイファ"],
+    "common_typos": ["マッカビ・ハイファ", "まっかびはいふぁ"],
+    "region_tags": ["イスラエル", "ハイファ"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "シェリフ・ティラスポル": {
+    "sport": "soccer",
+    "league": "Champions League",
+    "full_name": "Sheriff Tiraspol",
+    "short_name": "SHE",
+    "aliases": ["Sheriff", "SHE", "ティラスポル"],
+    "common_typos": ["シェリフ・ティラスポル", "しぇりふてぃらすぽる"],
+    "region_tags": ["モルドバ", "ティラスポル"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "カイラト": {
+    "sport": "soccer",
+    "league": "Champions League",
+    "full_name": "Kairat Almaty",
+    "short_name": "KAI",
+    "aliases": ["Kairat", "KAI", "Kairat Almaty", "カイラトアルマトイ"],
+    "common_typos": ["カイラト", "かいらと"],
+    "region_tags": ["カザフスタン", "アルマトイ"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "スラビアプラハ": {
+    "sport": "soccer",
+    "league": "Champions League",
+    "full_name": "Slavia Praha",
+    "short_name": "SLA",
+    "aliases": ["Slavia", "SLA", "Slavia Praha", "プラハ"],
+    "common_typos": ["スラビアプラハ", "すらびあぷらは"],
+    "region_tags": ["チェコ", "プラハ"],
+    "active": true,
+    "confidence_boost": 0.1
+  }
+}

@@ -1,0 +1,233 @@
+{
+  "バイエルンミュンヘン": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "Bayern Munich",
+    "short_name": "BAY",
+    "aliases": ["バイエルン", "Bayern", "FCB", "ミュンヘン", "Bayern Munich", "バイエルン・ミュンヘン"],
+    "common_typos": ["バイエルン・ミュンヘン", "ばいえるんみゅんへん"],
+    "region_tags": ["ドイツ", "ミュンヘン", "バイエルン"],
+    "active": true,
+    "confidence_boost": 0.3
+  },
+  "ドルトムント": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "Borussia Dortmund",
+    "short_name": "BVB",
+    "aliases": ["BVB", "Dortmund", "ボルシア・ドルトムント", "ボルシア"],
+    "common_typos": ["ボルシア・ドルトムント", "どるとむんと"],
+    "region_tags": ["ドイツ", "ドルトムント", "ノルトライン・ヴェストファーレン"],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "ライプツィヒ": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "RB Leipzig",
+    "short_name": "RBL",
+    "aliases": ["RB Leipzig", "RBL", "Leipzig", "レッドブル・ライプツィヒ", "RBライプツィヒ"],
+    "common_typos": ["ライプツィッヒ", "らいぷつぃひ"],
+    "region_tags": ["ドイツ", "ライプツィヒ", "ザクセン"],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "レバークーゼン": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "Bayer Leverkusen",
+    "short_name": "LEV",
+    "aliases": ["Leverkusen", "LEV", "Bayer", "バイエル・レバークーゼン", "バイエル・レヴァークーゼン"],
+    "common_typos": ["レヴァークーゼン", "ればーくーぜん"],
+    "region_tags": ["ドイツ", "レバークーゼン", "ノルトライン・ヴェストファーレン"],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "フランクフルト": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "Eintracht Frankfurt",
+    "short_name": "SGE",
+    "aliases": ["Eintracht Frankfurt", "SGE", "Frankfurt", "アイントラハト・フランクフルト"],
+    "common_typos": ["アイントラハト", "ふらんくふると"],
+    "region_tags": ["ドイツ", "フランクフルト", "ヘッセン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "フライブルク": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "SC Freiburg",
+    "short_name": "SCF",
+    "aliases": ["Freiburg", "SCF", "SC Freiburg", "フライブルク"],
+    "common_typos": ["フライブルグ", "ふらいぶるく"],
+    "region_tags": ["ドイツ", "フライブルク", "バーデン・ヴュルテンベルク"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ヴォルフスブルク": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "VfL Wolfsburg",
+    "short_name": "WOB",
+    "aliases": ["Wolfsburg", "WOB", "VfL Wolfsburg", "ヴォルフスブルク"],
+    "common_typos": ["ウォルフスブルク", "ヴォルフスブルグ", "うぉるふすぶるく"],
+    "region_tags": ["ドイツ", "ヴォルフスブルク", "ニーダーザクセン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "シャルケ": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "FC Schalke 04",
+    "short_name": "S04",
+    "aliases": ["Schalke", "S04", "FC Schalke", "シャルケ04"],
+    "common_typos": ["シャルケ04", "しゃるけ"],
+    "region_tags": ["ドイツ", "ゲルゼンキルヘン", "ノルトライン・ヴェストファーレン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ユニオンベルリン": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "1. FC Union Berlin",
+    "short_name": "FCU",
+    "aliases": ["Union Berlin", "FCU", "ウニオン・ベルリン"],
+    "common_typos": ["ユニオン・ベルリン", "ゆにおんべるりん"],
+    "region_tags": ["ドイツ", "ベルリン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ケルン": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "1. FC Cologne",
+    "short_name": "KOE",
+    "aliases": ["Cologne", "KOE", "FC Koln", "1. FCケルン", "ケルン"],
+    "common_typos": ["ケルン", "けるん"],
+    "region_tags": ["ドイツ", "ケルン", "ノルトライン・ヴェストファーレン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "マインツ": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "1. FSV Mainz 05",
+    "short_name": "M05",
+    "aliases": ["Mainz", "M05", "FSV Mainz", "マインツ05", "マインツ"],
+    "common_typos": ["マインツ05", "まいんつ"],
+    "region_tags": ["ドイツ", "マインツ", "ラインラント・プファルツ"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ボーフム": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "VfL Bochum",
+    "short_name": "BOC",
+    "aliases": ["Bochum", "BOC", "VfL Bochum"],
+    "common_typos": ["ボッフム", "ぼーふむ"],
+    "region_tags": ["ドイツ", "ボーフム", "ノルトライン・ヴェストファーレン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "アウクスブルク": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "FC Augsburg",
+    "short_name": "FCA",
+    "aliases": ["Augsburg", "FCA", "FC Augsburg", "アウクスブルク"],
+    "common_typos": ["アウグスブルク", "あうくすぶるく"],
+    "region_tags": ["ドイツ", "アウクスブルク", "バイエルン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ダルムシュタット": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "SV Darmstadt 98",
+    "short_name": "D98",
+    "aliases": ["Darmstadt", "D98", "SV Darmstadt", "ダルムシュタット98"],
+    "common_typos": ["ダルムシュタット98", "だるむしゅたっと"],
+    "region_tags": ["ドイツ", "ダルムシュタット", "ヘッセン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ホッフェンハイム": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "TSG 1899 Hoffenheim",
+    "short_name": "HOF",
+    "aliases": ["Hoffenheim", "HOF", "TSG Hoffenheim", "TSG 1899", "ホッフェンハイム"],
+    "common_typos": ["ホッフェンハイム", "ほっふぇんはいむ"],
+    "region_tags": ["ドイツ", "ホッフェンハイム", "バーデン・ヴュルテンベルク"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ハンブルク": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "Hamburger SV",
+    "short_name": "HSV",
+    "aliases": ["HSV", "Hamburg", "Hamburger SV", "ハンブルガーSV"],
+    "common_typos": ["ハンブルガー", "はんぶるく"],
+    "region_tags": ["ドイツ", "ハンブルク"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "シュトゥットガルト": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "VfB Stuttgart",
+    "short_name": "VFB",
+    "aliases": ["Stuttgart", "VFB", "VfB Stuttgart", "シュトゥットガルト"],
+    "common_typos": ["シュツットガルト", "しゅとぅっとがると"],
+    "region_tags": ["ドイツ", "シュトゥットガルト", "バーデン・ヴュルテンベルク"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ハイデンハイム": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "1. FC Heidenheim",
+    "short_name": "FCH",
+    "aliases": ["Heidenheim", "FCH", "1. FC Heidenheim", "ハイデンハイム"],
+    "common_typos": ["ハイデンハイム", "はいでんはいむ"],
+    "region_tags": ["ドイツ", "ハイデンハイム", "バーデン・ヴュルテンベルク"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ブレーメン": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "Werder Bremen",
+    "short_name": "SVW",
+    "aliases": ["Bremen", "Werder", "SVW", "Werder Bremen", "ヴェルダー・ブレーメン"],
+    "common_typos": ["ブレーメン", "ぶれーめん"],
+    "region_tags": ["ドイツ", "ブレーメン", "ニーダーザクセン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "メンヒェングラートバッハ": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "Borussia Monchengladbach",
+    "short_name": "BMG",
+    "aliases": ["Monchengladbach", "Gladbach", "BMG", "Borussia Monchengladbach", "ボルシア・メンヒェングラートバッハ"],
+    "common_typos": ["メンヘングラッドバッハ", "めんひぇんぐらーとばっは"],
+    "region_tags": ["ドイツ", "メンヒェングラートバッハ", "ノルトライン・ヴェストファーレン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ザンクトパウリ": {
+    "sport": "soccer",
+    "league": "Bundesliga",
+    "full_name": "FC St. Pauli",
+    "short_name": "STP",
+    "aliases": ["St. Pauli", "Sankt Pauli", "STP", "FC St. Pauli", "ザンクト・パウリ"],
+    "common_typos": ["ザンクトパウリ", "ざんくとぱうり"],
+    "region_tags": ["ドイツ", "ハンブルク"],
+    "active": true,
+    "confidence_boost": 0.1
+  }
+}

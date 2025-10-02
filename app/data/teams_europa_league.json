@@ -1,0 +1,354 @@
+{
+    "アストン・ヴィラ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Aston Villa",
+        "short_name": "AVL",
+        "aliases": ["Aston Villa", "Villa", "ヴィラ", "アストンビラ"],
+        "country": "England"
+    },
+    "ノッティンガム・フォレスト": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Nottingham Forest",
+        "short_name": "NFO",
+        "aliases": ["Nottingham Forest", "Nottingham", "Forest", "ノッテンガム", "フォレスト"],
+        "country": "England"
+    },
+    "ボローニャ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Bologna",
+        "short_name": "BOL",
+        "aliases": ["Bologna", "ボロー二ャ"],
+        "country": "Italy"
+    },
+    "ローマ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "AS Roma",
+        "short_name": "ROM",
+        "aliases": ["Roma", "AS Roma", "ASローマ"],
+        "country": "Italy"
+    },
+    "レアル・ベティス": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Real Betis",
+        "short_name": "BET",
+        "aliases": ["Real Betis", "Betis", "ベティス"],
+        "country": "Spain"
+    },
+    "セルタ・ビーゴ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Celta Vigo",
+        "short_name": "CEL",
+        "aliases": ["Celta Vigo", "Celta", "セルタ"],
+        "country": "Spain"
+    },
+    "シュトゥットガルト": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "VfB Stuttgart",
+        "short_name": "STU",
+        "aliases": ["Stuttgart", "VfB Stuttgart", "VfBシュトゥットガルト"],
+        "country": "Germany"
+    },
+    "フライブルク": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "SC Freiburg",
+        "short_name": "FRE",
+        "aliases": ["Freiburg", "SC Freiburg", "SCフライブルク"],
+        "country": "Germany"
+    },
+    "リール": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "LOSC Lille",
+        "short_name": "LIL",
+        "aliases": ["Lille", "LOSC Lille", "リール", "LOSCリール"],
+        "country": "France"
+    },
+    "リヨン": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Olympique Lyon",
+        "short_name": "LYO",
+        "aliases": ["Lyon", "Olympique Lyon", "OL", "オリンピック・リヨン"],
+        "country": "France"
+    },
+    "ゴー・アヘッド・イーグルス": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Go Ahead Eagles",
+        "short_name": "GAE",
+        "aliases": ["Go Ahead Eagles", "Eagles", "イーグルス"],
+        "country": "Netherlands"
+    },
+    "ポルト": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "FC Porto",
+        "short_name": "POR",
+        "aliases": ["Porto", "FC Porto", "FCポルト"],
+        "country": "Portugal"
+    },
+    "ディナモ・ザグレブ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Dinamo Zagreb",
+        "short_name": "DZG",
+        "aliases": ["Dinamo Zagreb", "Zagreb", "ザグレブ"],
+        "country": "Croatia"
+    },
+    "セルティック": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Celtic",
+        "short_name": "CEL",
+        "aliases": ["Celtic", "Celtic FC", "セルティックFC"],
+        "country": "Scotland"
+    },
+    "バーゼル": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "FC Basel",
+        "short_name": "BAS",
+        "aliases": ["Basel", "FC Basel", "FCバーゼル"],
+        "country": "Switzerland"
+    },
+    "シュトゥルム・グラーツ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Sturm Graz",
+        "short_name": "STU",
+        "aliases": ["Sturm Graz", "Sturm", "グラーツ", "シュトゥルム"],
+        "country": "Austria"
+    },
+    "ツルヴェナ・ズヴェズダ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Crvena Zvezda",
+        "short_name": "CZV",
+        "aliases": ["Crvena Zvezda", "Red Star Belgrade", "レッドスター", "ベオグラード"],
+        "country": "Serbia"
+    },
+    "フェレンツヴァーロシュ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Ferencvaros",
+        "short_name": "FER",
+        "aliases": ["Ferencvaros", "Ferencvarosi TC", "フェレンツ"],
+        "country": "Hungary"
+    },
+    "フェネルバフチェ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Fenerbahce",
+        "short_name": "FEN",
+        "aliases": ["Fenerbahce", "Fenerbahçe", "フェネル"],
+        "country": "Turkey"
+    },
+    "レンジャーズ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Rangers",
+        "short_name": "RAN",
+        "aliases": ["Rangers", "Rangers FC", "レンジャーズFC"],
+        "country": "Scotland"
+    },
+    "ニース": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "OGC Nice",
+        "short_name": "NIC",
+        "aliases": ["Nice", "OGC Nice", "OGCニース"],
+        "country": "France"
+    },
+    "フェイエノールト": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Feyenoord",
+        "short_name": "FEY",
+        "aliases": ["Feyenoord", "フェイエノールト"],
+        "country": "Netherlands"
+    },
+    "ヴィクトリア・プルゼニ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Viktoria Plzen",
+        "short_name": "VPL",
+        "aliases": ["Viktoria Plzen", "Plzen", "プルゼニ"],
+        "country": "Czech Republic"
+    },
+    "ザルツブルク": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Red Bull Salzburg",
+        "short_name": "SAL",
+        "aliases": ["Salzburg", "Red Bull Salzburg", "RBザルツブルク"],
+        "country": "Austria"
+    },
+    "ヘンク": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "KRC Genk",
+        "short_name": "GEN",
+        "aliases": ["Genk", "KRC Genk", "KRCヘンク"],
+        "country": "Belgium"
+    },
+    "サムスンスポル": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Samsunspor",
+        "short_name": "SAM",
+        "aliases": ["Samsunspor", "サムスン"],
+        "country": "Turkey"
+    },
+    "シグマ・オロモウツ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Sigma Olomouc",
+        "short_name": "SIG",
+        "aliases": ["Sigma Olomouc", "Olomouc", "オロモウツ"],
+        "country": "Czech Republic"
+    },
+    "アバディーン": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Aberdeen",
+        "short_name": "ABE",
+        "aliases": ["Aberdeen", "Aberdeen FC"],
+        "country": "Scotland"
+    },
+    "ヤングボーイズ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Young Boys",
+        "short_name": "YBO",
+        "aliases": ["Young Boys", "BSC Young Boys", "ヤングボーイズ"],
+        "country": "Switzerland"
+    },
+    "ディナモ・キーウ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Dynamo Kyiv",
+        "short_name": "DKI",
+        "aliases": ["Dynamo Kyiv", "Dynamo Kiev", "キエフ", "キーウ"],
+        "country": "Ukraine"
+    },
+    "レフ・ポズナン": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Lech Poznan",
+        "short_name": "LEP",
+        "aliases": ["Lech Poznan", "Poznan", "ポズナン"],
+        "country": "Poland"
+    },
+    "マルメ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Malmo FF",
+        "short_name": "MAL",
+        "aliases": ["Malmo", "Malmo FF", "マルメFF"],
+        "country": "Sweden"
+    },
+    "ルドゴレツ・ラズグラド": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Ludogorets Razgrad",
+        "short_name": "LUD",
+        "aliases": ["Ludogorets", "Ludogorets Razgrad", "ルドゴレツ"],
+        "country": "Bulgaria"
+    },
+    "スロヴァン・ブラチスラヴァ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Slovan Bratislava",
+        "short_name": "SLB",
+        "aliases": ["Slovan Bratislava", "Slovan", "ブラチスラヴァ"],
+        "country": "Slovakia"
+    },
+    "シュケンディヤ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Shkendija",
+        "short_name": "SHK",
+        "aliases": ["Shkendija"],
+        "country": "North Macedonia"
+    },
+    "PAOK": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "PAOK Thessaloniki",
+        "short_name": "PAO",
+        "aliases": ["PAOK", "PAOK Thessaloniki", "パオク"],
+        "country": "Greece"
+    },
+    "マッカビ・テルアビブ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Maccabi Tel Aviv",
+        "short_name": "MTA",
+        "aliases": ["Maccabi Tel Aviv", "Maccabi", "マッカビ", "Mテルアビブ"],
+        "country": "Israel"
+    },
+    "リエカ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "HNK Rijeka",
+        "short_name": "RIJ",
+        "aliases": ["Rijeka", "HNK Rijeka"],
+        "country": "Croatia"
+    },
+    "FCSB": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "FCSB",
+        "short_name": "FCS",
+        "aliases": ["FCSB", "Steaua Bucharest", "ステアウア"],
+        "country": "Romania"
+    },
+    "ミッティラン": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "FC Midtjylland",
+        "short_name": "MID",
+        "aliases": ["Midtjylland", "FCミッティラン"],
+        "country": "Denmark"
+    },
+    "カラバフ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Qarabag FK",
+        "short_name": "QAR",
+        "aliases": ["Qarabag", "Qarabağ", "Qarabag FK", "カラバグ"],
+        "country": "Azerbaijan"
+    },
+    "コペンハーゲン": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "FC Copenhagen",
+        "short_name": "COP",
+        "aliases": ["Copenhagen", "FC Copenhagen", "FCコペンハーゲン"],
+        "country": "Denmark"
+    },
+    "ビルバオ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Athletic Bilbao",
+        "short_name": "ATH",
+        "aliases": ["Athletic Bilbao", "Athletic", "Bilbao", "A・ビルバオ", "アスレティック・ビルバオ"],
+        "country": "Spain"
+    },
+    "オリンピアコス": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Olympiacos",
+        "short_name": "OLY",
+        "aliases": ["Olympiacos", "Olympiakos"],
+        "country": "Greece"
+    }
+}

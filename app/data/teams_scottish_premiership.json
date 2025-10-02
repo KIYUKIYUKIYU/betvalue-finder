@@ -1,0 +1,156 @@
+{
+  "セルティック": {
+    "sport": "soccer",
+    "league": "Scottish Premiership",
+    "full_name": "Celtic FC",
+    "short_name": "CEL",
+    "aliases": ["Celtic", "CEL", "セルツ"],
+    "common_typos": ["セルチック", "せるてぃっく"],
+    "region_tags": ["スコットランド", "グラスゴー"],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "レンジャーズ": {
+    "sport": "soccer",
+    "league": "Scottish Premiership",
+    "full_name": "Rangers FC",
+    "short_name": "RAN",
+    "aliases": ["Rangers", "RAN", "グラスゴー・レンジャーズ"],
+    "common_typos": ["レンジャース", "れんじゃーず"],
+    "region_tags": ["スコットランド", "グラスゴー"],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "ハーツ": {
+    "sport": "soccer",
+    "league": "Scottish Premiership",
+    "full_name": "Heart of Midlothian",
+    "short_name": "HEA",
+    "aliases": ["Hearts", "HEA", "Heart of Midlothian", "ハート・オブ・ミドロシアン"],
+    "common_typos": ["ハーツ", "はーつ"],
+    "region_tags": ["スコットランド", "エディンバラ"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ハイバーニアン": {
+    "sport": "soccer",
+    "league": "Scottish Premiership",
+    "full_name": "Hibernian FC",
+    "short_name": "HIB",
+    "aliases": ["Hibernian", "HIB", "Hibs"],
+    "common_typos": ["ハイバーニアン", "はいばーにあん"],
+    "region_tags": ["スコットランド", "エディンバラ"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "アバディーン": {
+    "sport": "soccer",
+    "league": "Scottish Premiership",
+    "full_name": "Aberdeen FC",
+    "short_name": "ABE",
+    "aliases": ["Aberdeen", "ABE"],
+    "common_typos": ["アバディーン", "あばでぃーん"],
+    "region_tags": ["スコットランド", "アバディーン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ダンディーユナイテッド": {
+    "sport": "soccer",
+    "league": "Scottish Premiership",
+    "full_name": "Dundee United",
+    "short_name": "DUN",
+    "aliases": ["Dundee United", "DUN", "ダンディー・ユナイテッド"],
+    "common_typos": ["ダンディー・ユナイテッド", "だんでぃーゆないてっど"],
+    "region_tags": ["スコットランド", "ダンディー"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "キルマーノック": {
+    "sport": "soccer",
+    "league": "Scottish Premiership",
+    "full_name": "Kilmarnock FC",
+    "short_name": "KIL",
+    "aliases": ["Kilmarnock", "KIL"],
+    "common_typos": ["キルマーノック", "きるまーのっく"],
+    "region_tags": ["スコットランド", "キルマーノック"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "マザーウェル": {
+    "sport": "soccer",
+    "league": "Scottish Premiership",
+    "full_name": "Motherwell FC",
+    "short_name": "MOT",
+    "aliases": ["Motherwell", "MOT"],
+    "common_typos": ["マザーウェル", "まざーうぇる"],
+    "region_tags": ["スコットランド", "マザーウェル"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "セントミレン": {
+    "sport": "soccer",
+    "league": "Scottish Premiership",
+    "full_name": "St Mirren FC",
+    "short_name": "STM",
+    "aliases": ["St Mirren", "STM", "セント・ミレン"],
+    "common_typos": ["せんとみれん"],
+    "region_tags": ["スコットランド", "ペイズリー"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ロス・カウンティ": {
+    "sport": "soccer",
+    "league": "Scottish Premiership",
+    "full_name": "Ross County FC",
+    "short_name": "ROS",
+    "aliases": ["Ross County", "ROS"],
+    "common_typos": ["ロス・カウンティ", "ろすかうんてぃ"],
+    "region_tags": ["スコットランド", "ディンウォール"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "リビングストン": {
+    "sport": "soccer",
+    "league": "Scottish Premiership",
+    "full_name": "Livingston FC",
+    "short_name": "LIV",
+    "aliases": ["Livingston", "LIV", "リヴィングストン"],
+    "common_typos": ["りびんぐすとん"],
+    "region_tags": ["スコットランド", "リビングストン"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "セントジョンストン": {
+    "sport": "soccer",
+    "league": "Scottish Premiership",
+    "full_name": "St Johnstone FC",
+    "short_name": "STJ",
+    "aliases": ["St Johnstone", "STJ"],
+    "common_typos": ["セント・ジョンストン", "せんとじょんすとん"],
+    "region_tags": ["スコットランド", "パース"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ダンディー": {
+    "sport": "soccer",
+    "league": "Scottish Premiership",
+    "full_name": "Dundee FC",
+    "short_name": "DUN",
+    "aliases": ["Dundee", "DUN"],
+    "common_typos": ["だんでぃー"],
+    "region_tags": ["スコットランド", "ダンディー"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "フォルカーク": {
+    "sport": "soccer",
+    "league": "Scottish Premiership",
+    "full_name": "Falkirk FC",
+    "short_name": "FAL",
+    "aliases": ["Falkirk", "FAL"],
+    "common_typos": ["ふぉるかーく"],
+    "region_tags": ["スコットランド", "フォルカーク"],
+    "active": true,
+    "confidence_boost": 0.1
+  }
+}

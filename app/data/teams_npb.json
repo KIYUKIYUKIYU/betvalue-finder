@@ -1,0 +1,134 @@
+{
+  "巨人": {
+    "sport": "npb",
+    "league": "Central League",
+    "full_name": "読売ジャイアンツ",
+    "short_name": "G",
+    "aliases": ["ジャイアンツ", "Giants", "G", "読売", "読売ジャイアンツ"],
+    "common_typos": ["じゃいあんつ", "きょじん"],
+    "region_tags": ["日本", "東京", "関東"],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "阪神": {
+    "sport": "npb",
+    "league": "Central League",
+    "full_name": "阪神タイガース",
+    "short_name": "T",
+    "aliases": ["タイガース", "Tigers", "T", "阪神タイガース"],
+    "common_typos": ["たいがーす", "はんしん"],
+    "region_tags": ["日本", "大阪", "関西"],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "中日": {
+    "sport": "npb",
+    "league": "Central League",
+    "full_name": "中日ドラゴンズ",
+    "short_name": "D",
+    "aliases": ["ドラゴンズ", "Dragons", "D", "中日ドラゴンズ"],
+    "common_typos": ["どらごんず", "ちゅうにち"],
+    "region_tags": ["日本", "名古屋", "中部"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ヤクルト": {
+    "sport": "npb",
+    "league": "Central League",
+    "full_name": "東京ヤクルトスワローズ",
+    "short_name": "S",
+    "aliases": ["スワローズ", "Swallows", "S", "東京ヤクルト", "東京ヤクルトスワローズ"],
+    "common_typos": ["すわろーず", "やくると"],
+    "region_tags": ["日本", "東京", "関東"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "広島": {
+    "sport": "npb",
+    "league": "Central League",
+    "full_name": "広島東洋カープ",
+    "short_name": "C",
+    "aliases": ["カープ", "Carp", "C", "広島東洋", "広島東洋カープ"],
+    "common_typos": ["かーぷ", "ひろしま"],
+    "region_tags": ["日本", "広島", "中国"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "DeNA": {
+    "sport": "npb",
+    "league": "Central League",
+    "full_name": "横浜DeNAベイスターズ",
+    "short_name": "DB",
+    "aliases": ["ベイスターズ", "BayStars", "DB", "横浜", "横浜DeNA", "横浜DeNAベイスターズ"],
+    "common_typos": ["べいすたーず", "でぃーえぬえー"],
+    "region_tags": ["日本", "横浜", "関東"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ソフトバンク": {
+    "sport": "npb",
+    "league": "Pacific League",
+    "full_name": "福岡ソフトバンクホークス",
+    "short_name": "H",
+    "aliases": ["ホークス", "Hawks", "SB", "H", "福岡ソフトバンク", "福岡ソフトバンクホークス", "ソフト"],
+    "common_typos": ["ほーくす", "そふとばんく"],
+    "region_tags": ["日本", "福岡", "九州"],
+    "active": true,
+    "confidence_boost": 0.2
+  },
+  "日本ハム": {
+    "sport": "npb",
+    "league": "Pacific League",
+    "full_name": "北海道日本ハムファイターズ",
+    "short_name": "F",
+    "aliases": ["ファイターズ", "Fighters", "F", "日ハム", "北海道日本ハム", "北海道日本ハムファイターズ"],
+    "common_typos": ["ふぁいたーず", "にっぽんはむ"],
+    "region_tags": ["日本", "札幌", "北海道"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "ロッテ": {
+    "sport": "npb",
+    "league": "Pacific League",
+    "full_name": "千葉ロッテマリーンズ",
+    "short_name": "M",
+    "aliases": ["マリーンズ", "Marines", "M", "千葉ロッテ", "千葉ロッテマリーンズ"],
+    "common_typos": ["まりーんず", "ろって"],
+    "region_tags": ["日本", "千葉", "関東"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "西武": {
+    "sport": "npb",
+    "league": "Pacific League",
+    "full_name": "埼玉西武ライオンズ",
+    "short_name": "L",
+    "aliases": ["ライオンズ", "Lions", "L", "埼玉西武", "埼玉西武ライオンズ"],
+    "common_typos": ["らいおんず", "せいぶ"],
+    "region_tags": ["日本", "所沢", "関東"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "楽天": {
+    "sport": "npb",
+    "league": "Pacific League",
+    "full_name": "東北楽天ゴールデンイーグルス",
+    "short_name": "E",
+    "aliases": ["イーグルス", "Eagles", "E", "東北楽天", "東北楽天ゴールデンイーグルス"],
+    "common_typos": ["いーぐるす", "らくてん"],
+    "region_tags": ["日本", "仙台", "東北"],
+    "active": true,
+    "confidence_boost": 0.1
+  },
+  "オリックス": {
+    "sport": "npb",
+    "league": "Pacific League",
+    "full_name": "オリックス・バファローズ",
+    "short_name": "Bs",
+    "aliases": ["バファローズ", "Buffaloes", "Bs", "オリックス・バファローズ"],
+    "common_typos": ["ばふぁろーず", "おりっくす"],
+    "region_tags": ["日本", "大阪", "関西"],
+    "active": true,
+    "confidence_boost": 0.1
+  }
+}

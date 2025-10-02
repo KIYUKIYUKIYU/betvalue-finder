@@ -1,0 +1,80 @@
+{
+    "ミッティラン": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "FC Midtjylland",
+        "aliases": ["Midtjylland"]
+    },
+    "シュトゥルム": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Sturm Graz",
+        "aliases": ["Sturm"]
+    },
+    "PAOK": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "PAOK Thessaloniki",
+        "aliases": []
+    },
+    "Mテルアビブ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Maccabi Tel Aviv",
+        "aliases": ["Maccabi Tel Aviv"]
+    },
+    "ノッテンガム": {
+        "sport": "soccer",
+        "league": "Premier League",
+        "full_name": "Nottingham Forest",
+        "aliases": ["Nottingham"]
+    },
+    "レッドスター": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Crvena Zvezda",
+        "aliases": ["Crvena Zvezda"]
+    },
+    "ザグレブ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Dinamo Zagreb",
+        "aliases": ["Dinamo Zagreb"]
+    },
+    "フライブルク": {
+        "sport": "soccer",
+        "league": "Bundesliga",
+        "full_name": "SC Freiburg",
+        "aliases": ["Freiburg"]
+    },
+    "バーゼル": {
+        "sport": "soccer",
+        "league": "Swiss Super League",
+        "full_name": "FC Basel",
+        "aliases": ["Basel"]
+    },
+    "マルメ": {
+        "sport": "soccer",
+        "league": "Allsvenskan",
+        "full_name": "Malmo FF",
+        "aliases": ["Malmo"]
+    },
+    "ルドゴレツ": {
+        "sport": "soccer",
+        "league": "Europa League",
+        "full_name": "Ludogorets Razgrad",
+        "aliases": ["Ludogorets"]
+    },
+    "ニース": {
+        "sport": "soccer",
+        "league": "Ligue 1",
+        "full_name": "OGC Nice",
+        "aliases": ["Nice"]
+    },
+    "ローマ": {
+        "sport": "soccer",
+        "league": "Serie A",
+        "full_name": "AS Roma",
+        "aliases": ["Roma"]
+    }
+}
