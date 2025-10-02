@@ -2,6 +2,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List, Dict
 import os
@@ -15,6 +16,15 @@ from app.pipeline_orchestrator import BettingPipelineOrchestrator
 from app.api.logging_endpoints import router as logging_router
 
 app = FastAPI(title="BetValue Finder API", version="4.0.0")
+
+# CORS設定 - Cloudflareからのアクセスを許可
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 本番環境では具体的なドメインを指定することを推奨
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ログミドルウェアの設定
 setup_logging_middleware(app)
