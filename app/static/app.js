@@ -10,13 +10,21 @@ document.addEventListener('DOMContentLoaded', function() {
         sportSelect: document.getElementById('sport-select'),
         rakebackSelect: document.getElementById('rakeback-select'),
         dateInput: document.getElementById('date-input'),
+        autoDate: document.getElementById('auto-date'),
         pasteInput: document.getElementById('paste-input'),
         clearBtn: document.getElementById('clear-btn'),
         analyzeBtn: document.getElementById('analyze-btn'),
         resultsSection: document.getElementById('results-section'),
         resultsContainer: document.getElementById('results-container'),
         errorToast: document.getElementById('error-toast'),
-        loadingOverlay: document.getElementById('loading-overlay')
+        loadingOverlay: document.getElementById('loading-overlay'),
+        // status
+        statusKeyVal: document.getElementById('status-key-val'),
+        statusMlbVal: document.getElementById('status-mlb-val'),
+        statusMlbRem: document.getElementById('status-mlb-remaining'),
+        statusSocVal: document.getElementById('status-soccer-val'),
+        statusSocRem: document.getElementById('status-soccer-remaining'),
+        statusUpdated: document.getElementById('status-updated')
     };
     
     // 必須要素のチェック
@@ -56,6 +64,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // 自動日付の切替: チェックONでdate入力を無効化
+    if (elements.autoDate && elements.dateInput) {
+        const updateDateDisabled = () => {
+            elements.dateInput.disabled = !!elements.autoDate.checked;
+        };
+        updateDateDisabled();
+        elements.autoDate.addEventListener('change', updateDateDisabled);
+    }
+
     // クリアボタン
     if (elements.clearBtn) {
         elements.clearBtn.addEventListener('click', () => {
@@ -72,8 +89,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // 簡易スポーツ推定（保険）
+    function guessSportFromText(text) {
+        const soccerHints = [
+            "チェルシー","フラム","ホッフェンハイム","フランクフルト","マンチェスター",
+            "バルセロナ","レアル","インテル","ブンデス","プレミア","セリエ","リバプール","アーセナル"
+        ];
+        const mlbHints = [
+            "ヤンキース","レッドソックス","ドジャース","メッツ","フィリーズ","カブス","ブレーブス","エンゼルス"
+        ];
+        const s = (text || '').replace(/\s/g, '');
+        const hasSoccer = soccerHints.some(k => s.includes(k));
+        const hasMlb = mlbHints.some(k => s.includes(k));
+        if (hasSoccer && !hasMlb) return 'soccer';
+        if (hasMlb && !hasSoccer) return 'mlb';
+        return elements.sportSelect?.value || 'mlb';
+    }
+
     // 分析ボタン
-    elements.analyzeBtn.addEventListener('click', async () => {
+    elements.analyzeBtn.addEventListener('click', async (event) => {
+        event.preventDefault(); // Prevent any form submission behavior
+        
         const inputText = elements.pasteInput.value.trim();
         
         if (!inputText) {
@@ -81,29 +117,59 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        const sport = elements.sportSelect?.value || 'mlb';
+        let sport = elements.sportSelect?.value || 'mlb';
         const rakeback = parseFloat(elements.rakebackSelect?.value || '0.015');
+        // 入力内容からの保険的な推定
+        sport = guessSportFromText(inputText);
+        if (elements.sportSelect) elements.sportSelect.value = sport;
+
+        // 日付: 自動ONならnull、OFFなら入力値
+        let dateValue = null;
+        if (elements.autoDate && elements.dateInput) {
+            if (!elements.autoDate.checked) {
+                dateValue = elements.dateInput.value || null;
+            }
+        }
         
         // ローディング表示
         showLoading(true);
         elements.analyzeBtn.disabled = true;
         
         try {
+            const requestPayload = {
+                text: inputText,
+                sport: sport,
+                rakeback: rakeback,
+                jp_odds: 1.9,
+                date: dateValue
+            };
+            
+            // ネットワークデバッグ情報
+            console.log('Sending request:', requestPayload);
+            console.log('Request URL:', '/analyze_paste');
+            console.log('Request headers:', {'Content-Type': 'application/json'});
+            console.log('Request body:', JSON.stringify(requestPayload));
+
             const response = await fetch('/analyze_paste', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    text: inputText,
-                    sport: sport,
-                    rakeback: rakeback,
-                    jp_odds: 1.9
-                })
+                body: JSON.stringify(requestPayload)
             });
             
+            console.log('Response status:', response.status);
+            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+            
             if (!response.ok) {
-                const errorData = await response.json();
+                const errorText = await response.text();
+                console.log('Error response text:', errorText);
+                let errorData;
+                try {
+                    errorData = JSON.parse(errorText);
+                } catch {
+                    errorData = {detail: errorText};
+                }
                 throw new Error(errorData.detail || 'Analysis failed');
             }
             
@@ -179,14 +245,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const favTeamDisplay = game.fav_team_jp || game.fav_team || 'N/A';
         const dogTeamDisplay = game.fav_team === game.team_a ? game.team_b_jp : game.team_a_jp;
         
+        // 大幅ハンデの警告
+        const isLargeHandicap = game.pinnacle_line && Math.abs(game.pinnacle_line) >= 2.0;
+        const warningText = isLargeHandicap ? 
+            '<div style="color: #ff9800; font-size: 0.8em; margin-top: 5px;">⚠️ 大幅ハンデ（補間データ使用の可能性）</div>' : '';
+        
         title.innerHTML = `
             <h3 style="margin: 0 0 5px 0; color: #333;">
                 ${game.team_a_jp} vs ${game.team_b_jp}
+                ${game.game_time_jst ? `<span style="font-size: 0.7em; color: #666; margin-left: 10px;">📅 ${game.game_time_jst}</span>` : ''}
             </h3>
             <div style="font-size: 0.9em; color: #666;">
                 <span>ライン: <strong>${game.jp_line || 'N/A'}</strong></span>
                 <span style="margin-left: 15px;">フェイバリット: <strong>${favTeamDisplay}</strong></span>
             </div>
+            ${warningText}
         `;
         card.appendChild(title);
         
@@ -204,9 +277,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 favTeamDisplay,
                 'FAVORITE',
                 `-${game.pinnacle_line || 0}`,
-                game.fav_fair_prob,
-                game.fav_fair_odds,
-                game.fav_ev_pct_rake,
+                null, // 勝率表示を除去
+                game.fav_raw_odds,    // 生ピナクルオッズ
+                game.fav_fair_odds,   // マージン除去オッズ（参考用）
+                game.fav_ev_pct,      // レーキ無しEV
+                game.fav_ev_pct_rake, // レーキ込みEV
                 game.fav_verdict,
                 game.recommended_side === 'favorite'
             );
@@ -219,9 +294,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 dogTeamDisplay,
                 'UNDERDOG',
                 `+${game.pinnacle_line || 0}`,
-                game.dog_fair_prob,
-                game.dog_fair_odds,
-                game.dog_ev_pct_rake,
+                null, // 勝率表示を除去
+                game.dog_raw_odds,    // 生ピナクルオッズ
+                game.dog_fair_odds,   // マージン除去オッズ（参考用）
+                game.dog_ev_pct,      // レーキ無しEV
+                game.dog_ev_pct_rake, // レーキ込みEV
                 game.dog_verdict,
                 game.recommended_side === 'underdog'
             );
@@ -261,8 +338,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return card;
     }
     
-    // 各サイドの表示を作成
-    function createSideDiv(teamName, sideType, line, fairProb, fairOdds, evPct, verdict, isRecommended) {
+    // 各サイドの表示を作成（2-way表示対応）
+    function createSideDiv(teamName, sideType, line, fairProb, rawOdds, fairOdds, evPct, evPctRake, verdict, isRecommended) {
         const div = document.createElement('div');
         div.className = `side-result ${verdict || 'unknown'}`;
         div.style.padding = '12px';
@@ -288,8 +365,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const verdictColor = verdictColors[verdict] || '#9E9E9E';
         const verdictLabel = verdictLabels[verdict] || 'N/A';
         
-        // EV%の表示色
-        const evColor = evPct >= 0 ? '#4CAF50' : (evPct >= -3 ? '#FFC107' : '#F44336');
+        // EV%の表示色（レーキ込みベース）
+        const evColor = evPctRake >= 0 ? '#4CAF50' : (evPctRake >= -3 ? '#FFC107' : '#F44336');
+        const evColorPlain = evPct >= 0 ? '#4CAF50' : (evPct >= -3 ? '#FFC107' : '#F44336');
         
         div.innerHTML = `
             <div>
@@ -301,17 +379,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 </h4>
                 <div style="display: grid; gap: 6px; font-size: 0.9em;">
                     <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #666;">Win%:</span>
-                        <strong>${fairProb ? (fairProb * 100).toFixed(1) + '%' : 'N/A'}</strong>
+                        <span style="color: #666;">生オッズ:</span>
+                        <strong style="color: #1976D2;">${rawOdds ? rawOdds.toFixed(3) : 'N/A'}</strong>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #666;">Odds:</span>
-                        <strong>${fairOdds ? fairOdds.toFixed(3) : 'N/A'}</strong>
+                        <span style="color: #666;">除去オッズ:</span>
+                        <strong style="color: #757575;">${fairOdds ? fairOdds.toFixed(3) : 'N/A'} <span style="font-size: 0.8em;">(参考)</span></strong>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #666;">EV:</span>
-                        <strong style="color: ${evColor};">
+                        <span style="color: #666;">EV vs 1.9:</span>
+                        <strong style="color: ${evColorPlain};">
                             ${evPct !== null && evPct !== undefined ? evPct.toFixed(1) + '%' : 'N/A'}
+                        </strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #666;">EV (rake):</span>
+                        <strong style="color: ${evColor};">
+                            ${evPctRake !== null && evPctRake !== undefined ? evPctRake.toFixed(1) + '%' : 'N/A'}
                         </strong>
                     </div>
                     <div style="margin-top: 8px; text-align: center;">
@@ -378,4 +462,49 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     console.log('BetValue Finder ready');
+
+    // ===== APIステータス取得 =====
+    async function fetchApiStatus() {
+        try {
+            const res = await fetch('/api_status');
+            if (!res.ok) throw new Error('status HTTP ' + res.status);
+            const s = await res.json();
+            // key
+            if (elements.statusKeyVal) {
+                elements.statusKeyVal.textContent = s.api_key_configured ? (s.api_key_masked || 'SET') : 'NOT SET';
+                elements.statusKeyVal.style.color = s.api_key_configured ? '#2e7d32' : '#c62828';
+            }
+            // mlb
+            if (elements.statusMlbVal) {
+                const ok = s.mlb && s.mlb.ok;
+                elements.statusMlbVal.textContent = ok ? 'OK' : 'NG';
+                elements.statusMlbVal.style.color = ok ? '#2e7d32' : '#c62828';
+            }
+            if (elements.statusMlbRem) {
+                const r = s.mlb && s.mlb.remaining ? s.mlb.remaining : '';
+                elements.statusMlbRem.textContent = r ? `remaining: ${r}` : '\u00A0';
+            }
+            // soccer
+            if (elements.statusSocVal) {
+                const ok = s.soccer && s.soccer.ok;
+                elements.statusSocVal.textContent = ok ? 'OK' : 'NG';
+                elements.statusSocVal.style.color = ok ? '#2e7d32' : '#c62828';
+            }
+            if (elements.statusSocRem) {
+                const r = s.soccer && s.soccer.remaining ? s.soccer.remaining : '';
+                elements.statusSocRem.textContent = r ? `remaining: ${r}` : '\u00A0';
+            }
+            if (elements.statusUpdated) {
+                const ts = new Date().toLocaleString();
+                elements.statusUpdated.textContent = `更新: ${ts}`;
+            }
+        } catch (e) {
+            if (elements.statusKeyVal) {
+                elements.statusKeyVal.textContent = 'ERROR';
+                elements.statusKeyVal.style.color = '#c62828';
+            }
+        }
+    }
+    fetchApiStatus();
+    setInterval(fetchApiStatus, 60000);
 });

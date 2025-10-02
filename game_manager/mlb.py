@@ -5,7 +5,7 @@ MLB専用の試合管理機能
 """
 
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
 from .base import GameManager
@@ -55,8 +55,8 @@ class MLBGameManager(GameManager):
         "マーリンズ": "Miami Marlins",
     }
     
-    def __init__(self, api_key: str):
-        super().__init__(api_key, cache_dir="data/mlb")
+    def __init__(self, api_key: str, cache_dir: str = "data/mlb", enable_ttl_cache: bool = True, ttl_config=None):
+        super().__init__(api_key, cache_dir=cache_dir, enable_ttl_cache=enable_ttl_cache, ttl_config=ttl_config)
         self.team_mapping = self.TEAM_MAPPING
         
     def get_sport_name(self) -> str:
@@ -144,10 +144,24 @@ class MLBGameManager(GameManager):
             print(f"⚠️ Failed to format game data: {e}")
             return None
     
-    def fetch_odds(self, game_id: str, bookmaker_ids: List[int] = None) -> Optional[Dict]:
+    def fetch_odds(self, game_id: str, bookmaker_ids: List[int] = None, ttl_seconds: int = 120) -> Optional[Dict]:
         if bookmaker_ids is None:
-            bookmaker_ids = [4, 2]  # Pinnacle, Bet365
+            bookmaker_ids = [4]  # Pinnacle ONLY
             
+        # TTLキャッシュ確認
+        cache_path = os.path.join(self.cache_dir, f"odds_{game_id}.json")
+        if os.path.exists(cache_path):
+            try:
+                with open(cache_path, "r", encoding="utf-8") as f:
+                    cached = __import__("json").load(f)
+                ts = cached.get("fetch_time")
+                if ts:
+                    t = datetime.fromisoformat(ts)
+                    if datetime.now() - t <= timedelta(seconds=ttl_seconds):
+                        return cached
+            except Exception:
+                pass
+
         url = f"{self.API_BASE}/odds"
         params = {"game": game_id}
         
@@ -164,81 +178,88 @@ class MLBGameManager(GameManager):
             
             filtered_bookmakers = []
             for bm in odds_entry.get("bookmakers", []):
-                if int(bm.get("id", -1)) in bookmaker_ids:
+                try:
+                    bid = int(bm.get("id", -1))
+                except Exception:
+                    bid = -1
+                if bid in bookmaker_ids:
                     filtered_bookmakers.append(bm)
-            
+            # Pinnacleが無い場合はエラー（フォールバックなし）
             if not filtered_bookmakers:
-                print(f"⚠️ No odds from specified bookmakers for game {game_id}")
+                print(f"❌ ERROR: No Pinnacle odds available for game {game_id}")
                 return None
             
-            return {
+            result = {
                 "game_id": game_id,
                 "bookmakers": filtered_bookmakers,
                 "fetch_time": datetime.now().isoformat()
             }
+            # キャッシュ保存
+            try:
+                os.makedirs(self.cache_dir, exist_ok=True)
+                with open(cache_path, "w", encoding="utf-8") as f:
+                    __import__("json").dump(result, f, ensure_ascii=False, indent=2)
+            except Exception:
+                pass
+            return result
             
         except Exception as e:
             print(f"❌ Failed to fetch odds for game {game_id}: {e}")
             return None
 
-    def match_teams(self, teams: List[str]) -> Optional[Dict]:
-        """チーム名から試合を検索"""
-        from datetime import datetime
-        import json
-        import os
-        
-        # 今日の日付
-        today = datetime.now().strftime("%Y%m%d")
-        data_file = f"data/baseball_odds_{today}.json"
-        
-        # データファイルが存在しない場合はNone
-        if not os.path.exists(data_file):
-            return None
-            
-        try:
-            with open(data_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                
-            # データ構造の判定
-            if isinstance(data, list):
-                games = data
-            elif isinstance(data, dict) and 'response' in data:
-                games = data['response']
-            else:
-                return None
-            
-            # 日本語名を英語名に変換
-            team_a_jp = teams[0]
-            team_b_jp = teams[1]
-            team_a_en = self.TEAM_MAPPING.get(team_a_jp, team_a_jp)
-            team_b_en = self.TEAM_MAPPING.get(team_b_jp, team_b_jp)
-            
-            # 試合を検索
-            for game in games:
-                if 'game' in game and 'teams' in game['game']:
-                    home = game['game']['teams'].get('home', {}).get('name', '')
-                    away = game['game']['teams'].get('away', {}).get('name', '')
-                    game_id = game['game'].get('id')
-                elif 'home' in game and 'away' in game:
-                    home = game.get('home', {}).get('name', '')
-                    away = game.get('away', {}).get('name', '')
-                    game_id = game.get('id')
-                else:
-                    continue
-                
-                # チーム名でマッチング（部分一致も考慮）
-                if (team_a_en in home and team_b_en in away) or \
-                   (team_b_en in home and team_a_en in away) or \
-                   (team_a_en in away and team_b_en in home) or \
-                   (team_b_en in away and team_a_en in home):
-                    return {
-                        'id': game_id,
-                        'home': home,
-                        'away': away
-                    }
-                    
-        except Exception as e:
-            print(f"Error in match_teams: {e}")
-            return None
-        
+    def match_teams(self, teams: List[str], games: Optional[List[Dict]] = None) -> Optional[Dict]:
+        """チーム名から当日の試合をキャッシュ経由で検索（正規化つき）
+        gamesが与えられた場合はそれを優先して照合する。
+        """
+        def norm(s: str) -> str:
+            return (
+                (s or "")
+                .lower()
+                .replace(".", "")
+                .replace(" ", "")
+                .replace("-", "")
+            )
+
+        # 照合対象のゲームリストを用意（複数日のキャッシュから検索）
+        if games is None:
+            games = self.load_all_recent_cache(days_back=7)
+            if not games:
+                # フォールバック：最新キャッシュのみ試す
+                games = self.load_latest_cache()
+                if not games:
+                    return None
+
+        # 日本語→英語へ正規化
+        team_a_jp = teams[0]
+        team_b_jp = teams[1]
+        team_a_en = self.TEAM_MAPPING.get(team_a_jp, team_a_jp)
+        team_b_en = self.TEAM_MAPPING.get(team_b_jp, team_b_jp)
+
+        a = norm(team_a_en)
+        b = norm(team_b_en)
+
+        for g in games:
+            home = g.get("home") or g.get("raw", {}).get("teams", {}).get("home", {}).get("name", "")
+            away = g.get("away") or g.get("raw", {}).get("teams", {}).get("away", {}).get("name", "")
+            game_id = g.get("id") or g.get("raw", {}).get("id")
+
+            nh = norm(home)
+            na = norm(away)
+
+            if (a == nh and b == na) or (a == na and b == nh):
+                return {"id": game_id, "home": home, "away": away}
+
+            # 日本語名でも突き合わせ（home_jp/away_jp）
+            home_jp = g.get("home_jp") or ""
+            away_jp = g.get("away_jp") or ""
+            nhj = norm(home_jp)
+            naj = norm(away_jp)
+            aj = norm(self.TEAM_MAPPING.get(team_a_jp, team_a_jp))  # 既に英訳済みだが念のため
+            bj = norm(self.TEAM_MAPPING.get(team_b_jp, team_b_jp))
+            # 直接日本語比較（記号・空白無視）
+            ta_j = norm(team_a_jp)
+            tb_j = norm(team_b_jp)
+            if (ta_j == nhj and tb_j == naj) or (ta_j == naj and tb_j == nhj):
+                return {"id": game_id, "home": home, "away": away}
+
         return None

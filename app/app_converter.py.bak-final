@@ -1,0 +1,69 @@
+from __future__ import annotations
+import re
+from typing import Tuple, Dict
+
+# 変換表の単一ソースに統一
+from converter.baseball_rules import ConversionTable
+
+_CONV = ConversionTable()
+
+_PAT_ANGLE = re.compile(r"^\s*[<＜]\s*(.+?)\s*[>＞〉]\s*$")
+
+def normalize_jp_token(token: str) -> str:
+    t = (token or "").strip()
+    m = _PAT_ANGLE.match(t)
+    if m:
+        t = m.group(1).strip()
+    t = t.replace(" ", "").replace("　", "")
+
+    # 新しい変換ロジック
+    if '/' in t: # "0/5" -> "0.5"
+        parts = t.split('/')
+        return str(float(parts[0]) + float(parts[1]) / 10.0)
+    
+    if '半' in t: # "1半" -> "1.5", "0半5" -> "0.75"
+        if t.endswith('半'):
+            return str(float(t.replace('半', '')) + 0.5)
+        else:
+            base, sub = t.split('半')
+            base_val = float(base) if base else 0
+            # "0半5" -> 0.5 + 0.25 = 0.75
+            # "1半2" -> 1.5 + 0.25 = 1.75
+            if len(sub) == 1 and sub.isdigit() and int(sub) % 2 != 0:
+                return str(base_val + 0.5 + 0.25)
+            return str(base_val + 0.5)
+
+    # 小数.0 は整数へ（例: 1.0 -> 1）
+    if re.match(r"^\d+\.0$", t):
+        t = str(int(float(t)))
+    return t
+
+def jp_to_pinnacle(jp: str) -> float:
+    t = normalize_jp_token(jp)
+    return _CONV.jp_to_value(t)
+
+def pinnacle_to_jp(pinn: float) -> str:
+    return _CONV.value_to_jp(float(pinn))
+
+def try_parse_jp(token: str) -> Tuple[bool, float]:
+    try:
+        return True, jp_to_pinnacle(token)
+    except Exception:
+        return False, 0.0
+
+def all_mappings() -> Tuple[Dict[float, str], Dict[str, float]]:
+    # ConversionTableの内部辞書は公開していないため、問い合わせ関数を用意するなら
+    # 必要に応じてConversionTable側でアクセサを追加する。ここでは空を返す。
+    return {}, {}
+
+if __name__ == "__main__":
+    samples = ["<1.2>", "1半", "0.7", "1半7", "2", "0半5"]
+    for s in samples:
+        ok, v = try_parse_jp(s)
+        out = None
+        if ok:
+            try:
+                out = pinnacle_to_jp(v)
+            except Exception:
+                out = "(no label)"
+        print(s, "->", ok, v, "->", out)

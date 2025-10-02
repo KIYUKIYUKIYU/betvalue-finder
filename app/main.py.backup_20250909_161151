@@ -1,0 +1,1046 @@
+# -*- coding: utf-8 -*-
+"""
+app/main.py
+BetValue Finder API - MLB/サッカー対応版
+モジュール化されたオッズ処理とEV評価を使用
+"""
+
+from __future__ import annotations
+from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
+import os
+import sys
+import json
+import datetime as dt
+import re
+import logging
+import requests
+from app.universal_parser import UniversalBetParser
+
+# プロジェクトルートをパスに追加
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# 統一ハンデ変換モジュール（全競技共通・不変）
+from converter.unified_handicap_converter import jp_to_pinnacle, pinnacle_to_jp, HandicapConversionError
+
+# 新しいモジュール
+from converter.odds_processor import OddsProcessor
+from converter.ev_evaluator import EVEvaluator
+from converter.npb_team_mapping import get_npb_english_name, get_npb_full_name, NPB_TEAM_MAPPING
+from game_manager.mlb import MLBGameManager
+from game_manager.soccer import SoccerGameManager
+from game_manager.npb import NPBGameManager
+from game_manager.date_resolver import DateResolver
+from game_manager import GameIDResolver
+
+# ロガー設定
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+# ロガー設定
+logger = logging.getLogger(__name__)
+
+app = FastAPI(title="BetValue Finder API", version="2.1.1")
+
+# CORS設定
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 静的ファイル配信
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+if not os.path.exists(static_dir):
+    os.makedirs(static_dir)
+
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+# --- 定数 ---
+MLB_API_BASE = "https://v1.baseball.api-sports.io"
+SOCCER_API_BASE = "https://v3.football.api-sports.io"
+MLB_LEAGUE_ID = 1
+SOCCER_LEAGUES = {
+    39: "Premier League",
+    140: "La Liga",
+    78: "Bundesliga",
+    135: "Serie A",
+    61: "Ligue 1",
+}
+
+PINNACLE_ID = 4
+BET365_ID = 2
+
+# --- モデル ---
+class MapRequest(BaseModel):
+    jp: Optional[str] = None
+    pinn: Optional[float] = None
+
+class AnalyzePasteRequest(BaseModel):
+    text: str
+    sport: str = "auto"  # auto/mlb/soccer
+    rakeback: float = 0.015
+    jp_odds: float = 1.9
+    date: Optional[str] = None
+
+class GameEvaluation(BaseModel):
+    team_a: str
+    team_b: str
+    team_a_jp: str
+    team_b_jp: str
+    fav_team: Optional[str] = None
+    fav_team_jp: Optional[str] = None
+    jp_line: Optional[str] = None
+    pinnacle_line: Optional[float] = None
+    # フェイバリット側の評価（2-way表示）
+    fav_raw_odds: Optional[float] = None  # 生ピナクルオッズ
+    fav_fair_odds: Optional[float] = None  # マージン除去オッズ（参考用）
+    fav_ev_pct: Optional[float] = None
+    fav_ev_pct_rake: Optional[float] = None
+    fav_verdict: Optional[str] = None
+    # アンダードッグ側の評価（2-way表示）
+    dog_raw_odds: Optional[float] = None  # 生ピナクルオッズ
+    dog_fair_odds: Optional[float] = None  # マージン除去オッズ（参考用）
+    dog_ev_pct: Optional[float] = None
+    dog_ev_pct_rake: Optional[float] = None
+    dog_verdict: Optional[str] = None
+    # 推奨とエラー
+    recommended_side: Optional[str] = None  # "favorite", "underdog", "none"
+    error: Optional[str] = None
+    error_code: Optional[str] = None
+    suggestions: Optional[List[str]] = None
+
+class EvaluateOddsRequest(BaseModel):
+    game_id: str
+    jp_line: str
+    side: str = "home"  # home/away
+    rakeback: float = 0.0
+    jp_odds: float = 1.9
+    sport: str = "mlb"    # mlb/soccer
+
+class BestLinesRequest(BaseModel):
+    game_id: str
+    top_n: int = 3
+    min_ev: Optional[float] = None
+    rakeback: float = 0.0
+    jp_odds: float = 1.9
+    sport: str = "mlb"    # mlb/soccer
+
+class DebugParseRequest(BaseModel):
+    text: str
+    sport: str = "auto"
+
+class NPBBatchRequest(BaseModel):
+    text: str
+    rakeback: float = 0.015
+    jp_odds: float = 1.9
+
+
+# --- ユーティリティ ---
+def get_api_key() -> str:
+    """唯一のAPIキー(API_SPORTS_KEY)を取得"""
+    key = os.environ.get("API_SPORTS_KEY", "").strip()
+    if not key:
+        raise HTTPException(status_code=500, detail="API_SPORTS_KEY not configured")
+    return key
+
+def build_manager(sport: str, api_key_opt: str = ""):
+    sport = (sport or "mlb").lower()
+    if sport == "soccer":
+        return SoccerGameManager(api_key_opt)
+    elif sport == "npb":
+        return NPBGameManager(api_key_opt)
+    # default
+    return MLBGameManager(api_key_opt)
+
+# 新しい統合GameIDResolverのユーティリティ
+def get_game_resolver() -> GameIDResolver:
+    """統合GameIDResolverインスタンスを取得"""
+    api_key_opt = get_api_key()
+    return GameIDResolver(api_key_opt)
+
+def detect_sport(text: str) -> str:
+    """テキストから競技を自動判定"""
+    # サッカーのキーワード
+    soccer_keywords = [
+        "パレス", "フォレスト", "シティ", "ユナイテッド", "チェルシー",
+        "リバプール", "アーセナル", "バルセロナ", "レアル", "バイエルン",
+        "ユベントス", "ミラン", "パリ", "0/3", "0/5", "0/7"
+    ]
+
+    # NPBのキーワード
+    npb_keywords = [
+        "巨人", "ジャイアンツ", "阪神", "タイガース", "ヤクルト", "スワローズ",
+        "DeNA", "ベイスターズ", "横浜", "中日", "ドラゴンズ", "広島", "カープ",
+        "ソフトバンク", "ホークス", "西武", "ライオンズ", "楽天", "イーグルス",
+        "ロッテ", "マリーンズ", "日本ハム", "日ハム", "ファイターズ", "オリックス", "バファローズ"
+    ]
+
+    # MLBのキーワード
+    mlb_keywords = [
+        "ヤンキース", "レッドソックス", "ドジャース", "メッツ",
+        "カブス", "エンゼルス", "アストロズ", "ブレーブス", "マリナーズ"
+    ]
+
+    text_lower = text.lower()
+
+    # キーワードチェック
+    for keyword in soccer_keywords:
+        if keyword.lower() in text_lower:
+            return "soccer"
+    
+    for keyword in npb_keywords:
+        if keyword.lower() in text_lower:
+            return "npb"
+
+    for keyword in mlb_keywords:
+        if keyword.lower() in text_lower:
+            return "mlb"
+
+    # デフォルトはMLB
+    return "mlb"
+
+def parse_paste_text(text: str, sport: str = "auto") -> List[Dict]:
+    """汎用パーサーを使用した貼り付けテキスト解析"""
+    
+    if sport == "auto":
+        sport = detect_sport(text)
+        logging.info(f"Auto-detected sport: {sport}")
+    
+    # 汎用パーサーで解析
+    parser = UniversalBetParser()
+    parsed_games = parser.parse(text)
+    
+    # 既存のフォーマットに変換
+    games = []
+    for pg in parsed_games:
+        game = {
+            "team_a": pg.get('team_a'),
+            "team_a_jp": pg.get('team_a'),
+            "team_b": pg.get('team_b'),
+            "team_b_jp": pg.get('team_b'),
+        }
+        
+        if pg.get('handicap'):
+            # ハンデをピナクル値に変換（統一変換モジュール使用）
+            try:
+                pinn = jp_to_pinnacle(pg['handicap'])
+                game["fav_line_pinnacle"] = pinn
+                game["jp_line"] = pg['handicap']
+                
+                # フェイバリット側を判定
+                if pg.get('fav_team') == pg.get('team_a'):
+                    game["fav_side"] = "a"
+                elif pg.get('fav_team') == pg.get('team_b'):
+                    game["fav_side"] = "b"
+            except HandicapConversionError as e:
+                logging.warning(f"ハンデ変換エラー: {pg['handicap']} - {e}")
+                continue
+        
+        games.append(game)
+    
+    return games
+
+def parse_npb_batch_text(text: str) -> List[Dict]:
+    """NPB一括テキストの解析"""
+    import re
+    
+    matches = []
+    lines = text.strip().split('\n')
+    
+    # 時刻行フィルタリング
+    filtered_lines = []
+    for line in lines:
+        line = line.strip()
+        if line and not re.match(r'^\d{1,2}:\d{2}$', line):  # 時刻スキップ
+            filtered_lines.append(line)
+    
+    # 2行ずつペアで処理
+    i = 0
+    while i < len(filtered_lines):
+        if i + 1 < len(filtered_lines):
+            team1_line = filtered_lines[i]
+            team2_line = filtered_lines[i + 1]
+            
+            match_data = parse_npb_match_pair(team1_line, team2_line)
+            if match_data:
+                matches.append(match_data)
+            
+            i += 2
+        else:
+            i += 1
+    
+    return matches
+
+def parse_npb_match_pair(team1_line: str, team2_line: str) -> Optional[Dict]:
+    """NPB 2チームペアの解析"""
+    import re
+    
+    # ハンデ検出
+    handicap_pattern = r'^(.+?)<(.+?)>$'
+    
+    team1_match = re.match(handicap_pattern, team1_line.strip())
+    team2_match = re.match(handicap_pattern, team2_line.strip())
+    
+    if team1_match:
+        home_team = team1_match.group(1).strip()
+        away_team = team2_line.strip()
+        handicap = team1_match.group(2).strip()
+        side = 'home'
+    elif team2_match:
+        home_team = team2_match.group(1).strip()
+        away_team = team1_line.strip()
+        handicap = team2_match.group(2).strip()
+        side = 'away'
+    else:
+        home_team = team1_line.strip()
+        away_team = team2_line.strip()
+        handicap = "0"
+        side = 'home'
+    
+    # NPB正式名変換
+    home_full = get_npb_full_name(home_team)
+    away_full = get_npb_full_name(away_team)
+    
+    # 英語名変換
+    home_english = get_npb_english_name(home_full) if home_full else None
+    away_english = get_npb_english_name(away_full) if away_full else None
+    
+    if not home_english or not away_english:
+        logging.warning(f"Unknown NPB teams: {home_team} vs {away_team}")
+        return None
+    
+    return {
+        'home_team_jp': home_team,
+        'away_team_jp': away_team,
+        'home_team_full': home_full,
+        'away_team_full': away_full,
+        'home_team_en': home_english,
+        'away_team_en': away_english,
+        'handicap': handicap,
+        'side': side,
+        'raw_input': f"{team1_line} vs {team2_line}"
+    }
+
+def evaluate_npb_match_with_defaults(match: Dict, rakeback: float, jp_odds: float) -> Dict:
+    """NPBマッチを評価（計算ベースオッズ使用）"""
+    
+    # 計算ベースのオッズ生成（固定値廃止）
+    # HandicapInterpolatorを使用してピナクル側提供されないラインは線形補間で計算
+    from converter.handicap_interpolator import HandicapInterpolator
+    interpolator = HandicapInterpolator()
+    
+    # 基本となるピナクルオッズ（実際のAPIデータがない場合の最小限）
+    # これらも本来はピナクルAPIから取得すべきだが、デフォルト処理として設定
+    base_odds_data = {
+        -2.0: (3.0, 1.4),    # 大きなお気に入り
+        -1.5: (2.5, 1.6),    # 中程度のお気に入り  
+        1.5: (1.6, 2.5),     # 中程度のアンダードッグ
+        2.0: (1.4, 3.0)      # 大きなアンダードッグ
+    }
+    
+    # 必要なライン範囲を計算ベースで生成
+    target_lines = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
+    calculated_odds = {}
+    
+    for line in target_lines:
+        # 線形補間でオッズを計算
+        odds_result = interpolator.calculate_fair_probs_for_line(
+            base_odds_data, line, allow_interpolation=True
+        )
+        if odds_result:
+            home_prob, away_prob = odds_result
+            # 公正勝率から適正オッズを逆算（マージン考慮）
+            margin = 0.05  # 5%のマージンを想定
+            home_odds = (1.0 / home_prob) * (1 + margin)
+            away_odds = (1.0 / away_prob) * (1 + margin)
+            calculated_odds[line] = (round(home_odds, 2), round(away_odds, 2))
+        else:
+            # フォールバック：対称的な確率で計算
+            calculated_odds[line] = (1.90, 1.90)
+    
+    # 計算されたオッズでデータ構造を構築
+    default_lines = {
+        'ml': {'home': calculated_odds[0.0][0], 'away': calculated_odds[0.0][1]},
+        'hcap': [
+            {'line': line, 'home': calculated_odds[line][0], 'away': calculated_odds[line][1]}
+            for line in target_lines
+        ]
+    }
+    
+    # EVEvaluatorを使用（メインシステムのロジック、レーキバック込み）
+    ev_evaluator = EVEvaluator(jp_odds=jp_odds, rakeback=rakeback)
+    
+    # 日本式ハンデ→ピナクル変換
+    jp_handicap = match['handicap']
+    side = match['side']
+    
+    # ハンデ変換（フェイバリット/アンダードッグ符号処理修正版）
+    try:
+        if jp_handicap == "06":
+            base_line = 0.6
+        elif jp_handicap == "1.0":
+            base_line = 1.0
+        elif jp_handicap == "0":
+            base_line = 0.0
+        else:
+            base_line = float(jp_handicap.replace("半", ".5"))
+        
+        # フェイバリット/アンダードッグに応じて符号を決定（フロントエンドの表示に基づいて修正）
+        if side == "away":  # フェイバリット（パドレスなど）
+            pinnacle_line = -base_line  # マイナス符号
+        else:  # アンダードッグ（ロッキーズなど）
+            pinnacle_line = +base_line  # プラス符号
+            
+    except:
+        pinnacle_line = 0.0
+    
+    # オッズデータ形式変換（hcapリストから辞書へ）
+    odds_dict = {}
+    for hcap_item in default_lines['hcap']:
+        odds_dict[hcap_item['line']] = (hcap_item['home'], hcap_item['away'])
+    
+    # EV評価実行（正しいメソッドシグネチャ）
+    return ev_evaluator.evaluate_single_line(
+        odds_data=odds_dict,
+        target_line=pinnacle_line,
+        side=side
+    )
+
+def _norm_name(s: str) -> str:
+    return (
+        (s or "")
+        .lower()
+        .replace(".", "")
+        .replace(" ", "")
+        .replace("-", "")
+        .replace("_", "")
+    )
+
+def suggest_matchups(teams: List[str], games: Optional[List[Dict]]) -> List[str]:
+    """似たカード候補を返す（最大5件）"""
+    if not games:
+        return []
+    ta, tb = teams[0], teams[1]
+    na = _norm_name(ta)
+    nb = _norm_name(tb)
+    suggestions: List[str] = []
+    for g in games:
+        home = g.get("home") or g.get("raw", {}).get("teams", {}).get("home", {}).get("name", "")
+        away = g.get("away") or g.get("raw", {}).get("teams", {}).get("away", {}).get("name", "")
+        hj = g.get("home_jp") or ""
+        aj = g.get("away_jp") or ""
+        for H, A in ((home, away), (hj, aj)):
+            nh = _norm_name(H)
+            na_ = _norm_name(A)
+            # どちらかが部分一致していれば候補に
+            if (na in nh or nh in na) or (nb in na_ or na_ in nb):
+                label = f"{g.get('home') or H} vs {g.get('away') or A}"
+                if label not in suggestions:
+                    suggestions.append(label)
+                break
+        if len(suggestions) >= 5:
+            break
+    return suggestions
+
+# --- エンドポイント ---
+
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    """ルート：index.htmlを返す"""
+    index_path = os.path.join(static_dir, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path, media_type="text/html")
+
+    # index.htmlがない場合は簡単なメッセージ
+    return HTMLResponse(content="""
+    <html>
+        <head><title>BetValue Finder</title></head>
+        <body>
+            <h1>BetValue Finder API v2.0</h1>
+            <p>API is running with modularized odds processing and EV evaluation.</p>
+            <p><a href="/docs">API Documentation</a></p>
+        </body>
+    </html>
+    """)
+
+@app.post("/map")
+async def map_endpoint(req: MapRequest):
+    """日本式⇔ピナクル値の相互変換"""
+    if req.jp:
+        try:
+            pinn = jp_to_pinnacle(req.jp)
+            return {"jp": req.jp, "pinnacle": pinn}
+        except HandicapConversionError as e:
+            return {"error": f"未対応の日本式表記: {req.jp} - {e}"}
+
+    if req.pinn is not None:
+        try:
+            jp = pinnacle_to_jp(req.pinn)
+            return {"pinnacle": req.pinn, "jp": jp}
+        except Exception as e:
+            return {"error": str(e)}
+
+    return {"error": "jp または pinn のどちらかを指定してください"}
+
+@app.post("/analyze_paste", response_model=List[GameEvaluation])
+async def analyze_paste_endpoint(req: AnalyzePasteRequest):
+    """貼り付けテキストを解析してEV計算（両側評価版）"""
+    try:
+        # テキストをパース（APIキーは必要時のみ参照）
+        games = parse_paste_text(req.text, req.sport)
+
+        if not games:
+            raise HTTPException(status_code=400, detail="試合データが見つかりません")
+
+        # 判定スポーツ
+        sport = req.sport if req.sport != "auto" else detect_sport(req.text)
+
+        # GameManagerとモジュール初期化（APIキーは任意: キャッシュのみでも動作）
+        api_key_opt = os.environ.get("API_SPORTS_KEY", "").strip()
+        manager = build_manager(sport, api_key_opt)
+        odds_processor = OddsProcessor()
+        ev_evaluator = EVEvaluator(jp_odds=req.jp_odds, rakeback=req.rakeback)
+
+        results = []
+
+        # マッチングに使う試合リスト（日付解決機能付き）
+        match_games = None
+        if req.date:
+            try:
+                # DateResolverで適切なAPI日付を取得
+                resolver = DateResolver()
+                api_dates = resolver.get_api_dates(sport, req.date)
+                
+                # 複数日付の場合は最初に見つかったキャッシュを使用
+                for api_date in api_dates:
+                    ymd = api_date.replace("-", "")
+                    try:
+                        cache = manager.load_cache(f"games_{ymd}.json")
+                        if cache and isinstance(cache, dict):
+                            match_games = cache.get("games") or cache
+                            print(f"📅 Using cached games for {api_date} (from card date {req.date})")
+                            break
+                    except Exception:
+                        continue
+                        
+                if not match_games:
+                    print(f"⚠️ No cached games found for {sport} card date {req.date} (tried: {api_dates})")
+                    
+            except Exception as e:
+                print(f"❌ Date resolution error: {e}")
+                match_games = None
+
+        for game in games:
+            # 基本的な評価結果を作成
+            eval_result = GameEvaluation(
+                team_a=game["team_a"],
+                team_b=game["team_b"],
+                team_a_jp=game.get("team_a_jp", game["team_a"]),
+                team_b_jp=game.get("team_b_jp", game["team_b"])
+            )
+
+            # 試合を検索
+            matched_game = manager.match_teams([game["team_a"], game["team_b"]], games=match_games)
+
+            if not matched_game:
+                eval_result.error = "試合が見つかりません"
+                eval_result.error_code = "GAME_NOT_FOUND"
+                # 候補の提示
+                eval_result.suggestions = suggest_matchups([game["team_a"], game["team_b"]], match_games or manager.load_latest_cache())
+                results.append(eval_result)
+                continue
+
+            # フェイバリット側の処理
+            # 🚨 条件分岐デバッグログ
+            logger.info(f"🚨 CONDITION CHECK - fav_side: {game.get('fav_side')}, fav_line_pinnacle: {game.get('fav_line_pinnacle')}")
+            if game.get("fav_side") and game.get("fav_line_pinnacle"):
+                logger.info(f"🚨 TAKING MAIN PATH (with fav_side and fav_line_pinnacle)")
+                # 🔍 デバッグ: team_a/team_b とfav_sideの関係を確認
+                logger.info(f"🔍 DEBUG - team_a: {game['team_a']}, team_b: {game['team_b']}")
+                logger.info(f"🔍 DEBUG - matched_game home: {matched_game['home']}, away: {matched_game['away']}")
+                if game["fav_side"] == "a":
+                    eval_result.fav_team = game["team_a"]
+                    eval_result.fav_team_jp = game["team_a_jp"]
+                    fav_side = "home" if matched_game["home"] == eval_result.fav_team else "away"
+                    dog_team = game["team_b"]
+                    dog_team_jp = game["team_b_jp"]
+                    logger.info(f"🔍 DEBUG - fav_side=a: fav_team={eval_result.fav_team} → fav_side={fav_side}")
+                else:
+                    eval_result.fav_team = game["team_b"]
+                    eval_result.fav_team_jp = game["team_b_jp"]
+                    fav_side = "home" if matched_game["home"] == eval_result.fav_team else "away"
+                    dog_team = game["team_a"]
+                    dog_team_jp = game["team_a_jp"]
+                    logger.info(f"🔍 DEBUG - fav_side=b: fav_team={eval_result.fav_team} → fav_side={fav_side}")
+
+                # デバッグログ（フェイバリット/アンダードッグ判定確認用）
+                logging.debug(f"Favorite determination: {eval_result.fav_team_jp}({eval_result.fav_team}) = {fav_side}, "
+                             f"API game: {matched_game['away']} @ {matched_game['home']}")
+
+                eval_result.jp_line = game.get("jp_line")
+                eval_result.pinnacle_line = game["fav_line_pinnacle"]
+
+                # アンダードッグ側を判定
+                dog_side = "away" if fav_side == "home" else "home"
+
+                # オッズを取得
+                odds_data = manager.fetch_odds(matched_game["id"])
+
+                if not odds_data:
+                    eval_result.error = "オッズが取得できません"
+                    eval_result.error_code = "NO_ODDS"
+                    results.append(eval_result)
+                    continue
+
+                # オッズを処理
+                line_data = odds_processor.prepare_line_data(odds_data)
+
+                if not line_data:
+                    eval_result.error = "ハンデオッズが見つかりません"
+                    eval_result.error_code = "NO_HANDICAP_ODDS"
+                    results.append(eval_result)
+                    continue
+
+                # ハンデラインの両側を正しく評価（2-way表示システム）
+                # 修正: Home/Away + Favorite組み合わせでライン決定
+                if fav_side == "away":
+                    # Away Favorite → 両チーム +1.5ライン使用
+                    target_line = +eval_result.pinnacle_line
+                else:
+                    # Home Favorite → 両チーム -1.5ライン使用  
+                    target_line = -eval_result.pinnacle_line
+                
+                # 両チーム同じラインを使用
+                fav_target_line = target_line
+                dog_target_line = target_line
+                
+                # 🔧 修正確認用デバッグログ
+                logger.info(f"🔧 2-WAY DISPLAY - pinnacle_line: {eval_result.pinnacle_line}")
+                logger.info(f"🔧 2-WAY DISPLAY - target_line: {target_line} (fav_side: {fav_side})")
+                logger.info(f"🔧 2-WAY DISPLAY - dog_target_line: {dog_target_line} (side: {dog_side})")
+                
+                # フェイバリット側の簡略化EV評価（勝率計算なし）
+                fav_evaluation = ev_evaluator.evaluate_simplified_line(
+                    line_data,
+                    fav_target_line,
+                    fav_side
+                )
+
+                # アンダードッグ側の簡略化EV評価（勝率計算なし）
+                dog_evaluation = ev_evaluator.evaluate_simplified_line(
+                    line_data,
+                    dog_target_line,
+                    dog_side
+                )
+
+                # フェイバリット側の結果を設定（2-way表示）
+                eval_result.fav_raw_odds = fav_evaluation.get("raw_odds")
+                eval_result.fav_fair_odds = fav_evaluation.get("fair_odds")
+                eval_result.fav_ev_pct = fav_evaluation.get("ev_pct")
+                eval_result.fav_ev_pct_rake = fav_evaluation.get("ev_pct_rake")
+                eval_result.fav_verdict = fav_evaluation.get("verdict")
+
+                # アンダードッグ側の結果を設定（2-way表示）
+                eval_result.dog_raw_odds = dog_evaluation.get("raw_odds")
+                eval_result.dog_fair_odds = dog_evaluation.get("fair_odds")
+                eval_result.dog_ev_pct = dog_evaluation.get("ev_pct")
+                eval_result.dog_ev_pct_rake = dog_evaluation.get("ev_pct_rake")
+                eval_result.dog_verdict = dog_evaluation.get("verdict")
+
+                # サニティチェック - オッズが合理的範囲内かチェック
+                fav_odds = eval_result.fav_raw_odds
+                dog_odds = eval_result.dog_raw_odds
+                if fav_odds and dog_odds:
+                    if not (1.1 <= fav_odds <= 4.0) or not (1.1 <= dog_odds <= 4.0):
+                        logger.warning(f"⚠️ UNUSUAL ODDS - fav: {fav_odds}, dog: {dog_odds}, game: {eval_result.game_id}")
+
+                # 推奨側を決定（EVが高い方）
+                if eval_result.fav_ev_pct_rake and eval_result.dog_ev_pct_rake:
+                    if eval_result.fav_ev_pct_rake > eval_result.dog_ev_pct_rake:
+                        eval_result.recommended_side = "favorite"
+                    elif eval_result.dog_ev_pct_rake > eval_result.fav_ev_pct_rake:
+                        eval_result.recommended_side = "underdog"
+                    else:
+                        eval_result.recommended_side = "none"
+                
+                # エラーチェック
+                if fav_evaluation.get("error") or dog_evaluation.get("error"):
+                    eval_result.error = f"評価エラー: {fav_evaluation.get('error', '')} {dog_evaluation.get('error', '')}"
+                    eval_result.error_code = "EVALUATION_ERROR"
+            else:
+                logger.info(f"🚨 TAKING ELSE PATH (NO fav_side or fav_line_pinnacle)")
+                eval_result.error = "ハンデが指定されていません"
+                eval_result.error_code = "NO_HANDICAP"
+
+            results.append(eval_result)
+
+        return results
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error in analyze_paste: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/evaluate_odds")
+async def evaluate_odds_endpoint(req: EvaluateOddsRequest):
+    """特定ゲーム・ラインのEV評価"""
+    try:
+        sport = (req.sport or "mlb").lower()
+        api_key = get_api_key()
+
+        # GameManagerとモジュール初期化
+        manager = build_manager(sport, api_key)
+        odds_processor = OddsProcessor()
+        ev_evaluator = EVEvaluator(jp_odds=req.jp_odds, rakeback=req.rakeback)
+
+        # オッズ取得
+        odds_data = manager.fetch_odds(req.game_id)
+
+        if not odds_data:
+            raise HTTPException(status_code=404, detail="Odds not found for this game")
+
+        # オッズを処理
+        line_data = odds_processor.prepare_line_data(odds_data)
+
+        if not line_data:
+            raise HTTPException(status_code=404, detail="No handicap odds available")
+
+        # 日本式をピナクル値に変換（統一変換モジュール使用）
+        try:
+            pinnacle_value = jp_to_pinnacle(req.jp_line)
+        except HandicapConversionError as e:
+            raise HTTPException(status_code=400, detail=f"Invalid JP line: {req.jp_line} - {e}")
+
+        # EV評価
+        result = ev_evaluator.evaluate_single_line(
+            line_data,
+            pinnacle_value,
+            req.side
+        )
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error in evaluate_odds: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/find_best_lines")
+async def find_best_lines_endpoint(req: BestLinesRequest):
+    """特定ゲームの最良ラインを検索"""
+    try:
+        sport = (req.sport or "mlb").lower()
+        api_key = get_api_key()
+
+        # GameManagerとモジュール初期化
+        manager = build_manager(sport, api_key)
+        odds_processor = OddsProcessor()
+        ev_evaluator = EVEvaluator(jp_odds=req.jp_odds, rakeback=req.rakeback)
+
+        # オッズ取得
+        odds_data = manager.fetch_odds(req.game_id)
+
+        if not odds_data:
+            raise HTTPException(status_code=404, detail="Odds not found for this game")
+
+        # オッズを処理
+        line_data = odds_processor.prepare_line_data(odds_data)
+
+        if not line_data:
+            raise HTTPException(status_code=404, detail="No handicap odds available")
+
+        # 最良ラインを検索
+        best_lines = ev_evaluator.find_best_lines(
+            line_data,
+            top_n=req.top_n,
+            min_ev=req.min_ev
+        )
+
+        return best_lines
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error in find_best_lines: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/health")
+async def health_check():
+    """ヘルスチェック"""
+    api_key = os.environ.get("API_SPORTS_KEY", "").strip()
+    return {
+        "status": "healthy",
+        "version": "2.1.1",
+        "api_key_configured": bool(api_key),
+        "modules": {
+            "odds_processor": "OK",
+            "ev_evaluator": "OK",
+            "game_manager": "OK"
+        },
+        "timestamp": dt.datetime.utcnow().isoformat()
+    }
+
+@app.get("/api_status")
+async def api_status():
+    """APIキー設定状況と疎通テスト（軽量）を返す。
+    - api_key_configured: True/False
+    - api_key_masked: 先頭4桁のみ表示 + 長さ
+    - mlb/soccer: ok, remaining(可能なら), error
+    注意: 実際にAPIに1回ずつGETします（日次の軽いクエリ）。
+    """
+    api_key = os.environ.get("API_SPORTS_KEY", "").strip()
+    key_set = bool(api_key)
+
+    masked = None
+    if key_set:
+        head = api_key[:4]
+        masked = f"{head}**** ({len(api_key)} chars)"
+
+    def check_api(url: str, params: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            headers = {"x-apisports-key": api_key} if api_key else {}
+            resp = requests.get(url, headers=headers, params=params, timeout=10)
+            if resp.status_code == 200:
+                remaining = resp.headers.get("x-ratelimit-requests-remaining") or resp.headers.get("x-ratelimit-remaining")
+                return {"ok": True, "remaining": remaining}
+            return {"ok": False, "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    # きょう（JST）の軽い疎通
+    today = dt.datetime.utcnow() + dt.timedelta(hours=9)
+    date_str = today.strftime("%Y-%m-%d")
+
+    mlb_status = {"ok": False, "error": "NO_KEY"}
+    soccer_status = {"ok": False, "error": "NO_KEY"}
+    if key_set:
+        mlb_status = check_api(
+            f"{MLB_API_BASE}/games",
+            {"league": MLB_LEAGUE_ID, "season": today.year, "date": date_str, "timezone": "Asia/Tokyo"},
+        )
+        soccer_status = check_api(
+            f"{SOCCER_API_BASE}/fixtures",
+            {"date": date_str, "timezone": "Asia/Tokyo"},
+        )
+
+    return {
+        "api_key_configured": key_set,
+        "api_key_masked": masked,
+        "mlb": mlb_status,
+        "soccer": soccer_status,
+        "timestamp": dt.datetime.utcnow().isoformat(),
+    }
+
+@app.get("/list_games")
+async def list_games(date: Optional[str] = None, sport: str = "mlb"):
+    """キャッシュから対戦一覧を返す（date=YYYY-MM-DD 任意）"""
+    sport = (sport or "mlb").lower()
+    api_key_opt = os.environ.get("API_SPORTS_KEY", "").strip()
+    manager = SoccerGameManager(api_key_opt) if sport == "soccer" else MLBGameManager(api_key_opt)
+    games = None
+    if date:
+        try:
+            ymd = date.replace("-", "")
+            cache = manager.load_cache(f"games_{ymd}.json")
+            if cache and isinstance(cache, dict):
+                games = cache.get("games") or cache
+        except Exception:
+            games = None
+    if games is None:
+        games = manager.load_latest_cache() or []
+    result = []
+    for g in games or []:
+        result.append({
+            "id": g.get("id") or g.get("raw", {}).get("id"),
+            "home": g.get("home"),
+            "away": g.get("away"),
+            "home_jp": g.get("home_jp"),
+            "away_jp": g.get("away_jp"),
+            "datetime": g.get("datetime"),
+        })
+    return {"count": len(result), "games": result}
+
+@app.post("/debug/parse")
+async def debug_parse(req: DebugParseRequest):
+    """貼り付けテキストの解析結果を返す（マッチング前）"""
+    games = parse_paste_text(req.text, req.sport)
+    return games
+
+@app.post("/npb_batch")
+async def npb_batch_analysis(req: NPBBatchRequest):
+    """NPB一括分析エンドポイント"""
+    try:
+        # NPBテキスト解析
+        matches = parse_npb_batch_text(req.text)
+        
+        if not matches:
+            raise HTTPException(status_code=400, detail="NPB試合データを解析できませんでした")
+        
+        # 各試合のEV分析
+        results = []
+        for match in matches:
+            try:
+                # デフォルトピナクルオッズでEV計算（Personal系と同等）
+                ev_result = evaluate_npb_match_with_defaults(match, req.rakeback, req.jp_odds)
+                results.append({
+                    "match": match,
+                    "ev_result": ev_result,
+                    "status": "success"
+                })
+            except Exception as e:
+                results.append({
+                    "match": match,
+                    "error": str(e),
+                    "status": "error"
+                })
+        
+        return {
+            "matches": matches,
+            "results": results,
+            "success_rate": f"{len([r for r in results if r['status'] == 'success'])}/{len(results)}"
+        }
+        
+    except Exception as e:
+        logging.error(f"NPB batch analysis error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- GameIDResolver統合エンドポイント ---
+
+class GameResolveRequest(BaseModel):
+    sport: str
+    team_a: str
+    team_b: str
+    date: Optional[str] = None
+
+@app.get("/resolver/status")
+async def resolver_status():
+    """GameIDResolverのステータスを取得"""
+    try:
+        resolver = get_game_resolver()
+        status = resolver.get_manager_status()
+        sports = resolver.get_available_sports()
+        
+        return {
+            "available_sports": sports,
+            "manager_status": status,
+            "timestamp": dt.datetime.utcnow().isoformat(),
+            "status": "ready"
+        }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "status": "error",
+            "timestamp": dt.datetime.utcnow().isoformat()
+        }
+
+@app.post("/resolver/game_id")
+async def resolve_game_id(req: GameResolveRequest):
+    """チーム名から試合IDを解決（統合版）"""
+    try:
+        resolver = get_game_resolver()
+        
+        # 日付解析
+        target_date = None
+        if req.date:
+            try:
+                target_date = dt.datetime.strptime(req.date, "%Y-%m-%d")
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+        
+        # 試合ID解決
+        team_names = [req.team_a, req.team_b]
+        game_info = resolver.resolve_game_id(req.sport, team_names, target_date)
+        
+        if not game_info:
+            return {
+                "success": False,
+                "error": f"No game found for {team_names} in {req.sport}",
+                "searched_teams": team_names,
+                "sport": req.sport,
+                "date": req.date
+            }
+        
+        return {
+            "success": True,
+            "game_info": game_info,
+            "searched_teams": team_names,
+            "sport": req.sport,
+            "date": req.date
+        }
+        
+    except Exception as e:
+        logging.error(f"Game ID resolution error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/resolver/odds")
+async def resolve_and_fetch_odds(req: GameResolveRequest):
+    """チーム名から試合IDを解決してオッズも取得（ワンストップ）"""
+    try:
+        resolver = get_game_resolver()
+        
+        # 日付解析
+        target_date = None
+        if req.date:
+            try:
+                target_date = dt.datetime.strptime(req.date, "%Y-%m-%d")
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+        
+        # ワンストップ処理
+        team_names = [req.team_a, req.team_b]
+        result = resolver.resolve_and_fetch_odds(
+            req.sport, 
+            team_names, 
+            target_date,
+            bookmaker_ids=[4, 2]  # Pinnacle, Bet365
+        )
+        
+        if not result:
+            return {
+                "success": False,
+                "error": f"No game or odds found for {team_names} in {req.sport}",
+                "searched_teams": team_names,
+                "sport": req.sport,
+                "date": req.date
+            }
+        
+        # オッズ統計
+        bookmakers = result.get("bookmakers", [])
+        total_bets = sum(len(bm.get("bets", [])) for bm in bookmakers)
+        
+        return {
+            "success": True,
+            "game_info": result.get("game_info"),
+            "odds_summary": {
+                "bookmaker_count": len(bookmakers),
+                "total_bet_types": total_bets,
+                "fetch_time": result.get("fetch_time")
+            },
+            "bookmakers": bookmakers,
+            "searched_teams": team_names,
+            "sport": req.sport,
+            "date": req.date
+        }
+        
+    except Exception as e:
+        logging.error(f"Resolve and fetch odds error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# メイン実行
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8001)

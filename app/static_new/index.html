@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BettingCalc</title>
+  <style>
+    :root{
+      --bg:#0B0F17; --paper:#0f1522; --paper2:#121a2a;
+      --text:#eaf0f8; --muted:#a7b4c6; --hair:rgba(255,255,255,.14);
+      --radius:16px; --shadow:0 12px 28px rgba(0,0,0,.45);
+    }
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--text);
+      background:
+        radial-gradient(900px 500px at 70% -10%, rgba(255,255,255,.04), transparent 60%),
+        var(--bg);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      -webkit-font-smoothing:antialiased;
+    }
+    .container{width:min(860px,92%); margin:18px auto}
+    .panel{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));
+      border:1px solid var(--hair); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; margin-bottom:16px;}
+
+    /* ── “そのブロック” (構造はそのまま) ───────────────────── */
+    .legacy { text-align:center; }
+    .legend{font-weight:700; margin:0 0 8px 0;}
+    .foot{font-size:12px; color:var(--muted); margin:6px 0;}
+
+    .legacy textarea,
+    .legacy select,
+    .legacy input[type="date"],
+    .legacy button{
+      background:var(--paper); color:var(--text);
+      border:1px solid var(--hair); border-radius:12px;
+      padding:10px 12px; font-size:16px;
+    }
+    .legacy textarea{
+      width:100%; min-height:140px; line-height:1.6;
+      text-align:center; resize:vertical;
+      background:var(--paper2);
+    }
+    .legacy textarea::placeholder{color:rgba(167,180,198,.65)}
+    .legacy select{ width:220px; text-align:center; text-align-last:center; }
+    .legacy input[type="date"]{ width:220px; text-align:center; background:var(--paper2); }
+    .legacy label{ display:inline-flex; flex-direction:column; gap:6px; align-items:center; margin:8px 0; }
+    .legacy input[type="checkbox"]{ accent-color:#60a5fa; }
+    .legacy .actions{ display:flex; gap:8px; justify-content:center; margin-top:10px; }
+    .legacy button{ cursor:pointer; background:linear-gradient(180deg, rgba(96,165,250,.22), rgba(96,165,250,.08)); }
+    .legacy button:hover{ box-shadow:0 0 0 6px rgba(96,165,250,.18); }
+    .legacy .strong{ font-weight:700; margin-top:10px; }
+
+    /* ── 結果側（汎用見栄え） ───────────────────────────── */
+    #results{ display:grid; gap:12px; }
+    #results .card, #results table{
+      border:1px solid var(--hair); border-radius:12px;
+      background:rgba(255,255,255,.03); padding:12px;
+    }
+    #results table{ width:100%; border-collapse:collapse; padding:0; }
+    #results th,#results td{ padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.08); }
+    #results thead th{ font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); text-align:left; }
+    #results tr:last-child td{ border-bottom:none; }
+    .results-title{ text-align:center; margin:0 0 8px 0; font-weight:700; }
+
+    /* ── モバイル ───────────────────────────────────────── */
+    @media (max-width:560px){
+      .container{width:min(560px,94%)}
+      .legacy select, .legacy input[type="date"], .legacy textarea, .legacy button{ width:100%; }
+      .legacy .actions{ flex-direction:column; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <!-- ▼ 変更禁止ブロック（構造・name/idは維持） -->
+    <section class="panel">
+      <div class="legacy" role="group" aria-label="入力">
+        <div class="legend">ハンデを入力</div>
+
+        <!-- 必須: テキストエリア（空欄＋薄い例文） -->
+        <textarea id="paste-input" name="paste_text" rows="6" placeholder="例：
+ヤンキース<1.0> 45
+レッドソックス<0.2> 30
+マリナーズ<0.2> 20"></textarea>
+
+        <div class="foot">※ &lt;&gt;付きの側がフェイバリット（マイナスライン）</div>
+
+        <label>競技
+          <select name="sport" id="sport">
+            <option value="MLB" selected>MLB</option>
+            <option value="NPB">NPB</option>
+            <option value="SOCCER">SOCCER</option>
+          </select>
+        </label>
+
+        <!-- レーキバック：0.5%刻み／上限3%（％値を送る想定） -->
+        <label>レーキバック
+          <select name="rakeback" id="rakeback">
+            <option value="0" selected>0%</option>
+            <option value="0.5">0.5%</option>
+            <option value="1.0">1.0%</option>
+            <option value="1.5">1.5%</option>
+            <option value="2.0">2.0%</option>
+            <option value="2.5">2.5%</option>
+            <option value="3.0">3.0%</option>
+          </select>
+        </label>
+
+        <label>日付
+          <input type="date" name="date" id="date" placeholder="YYYY-MM-DD" />
+        </label>
+
+        <label>
+          <input type="checkbox" id="auto" name="auto" checked /> 自動で判定します
+        </label>
+
+        <div class="actions">
+          <button type="button" id="clear-btn">クリア</button>
+          <!-- 必須: 計算ボタン -->
+          <button type="button" id="submit-btn">判定する</button>
+        </div>
+
+        <div class="strong">判定結果</div>
+      </div>
+    </section>
+    <!-- ▲ 変更禁止ブロックここまで -->
+
+    <!-- 必須: 結果表示エリア -->
+    <section class="panel" aria-labelledby="results-title">
+      <h2 id="results-title" class="results-title">結果</h2>
+      <div id="results" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <!-- 既存の動作JS（変更禁止） -->
+  <script src="app.js" defer></script>
+
+  <!-- 便利: Ctrl/Cmd + Enter で送信（任意。app.jsに影響なし） -->
+  <script>
+    addEventListener('keydown', (e)=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){ const b=document.getElementById('submit-btn'); if(b) b.click(); }});
+    document.getElementById('clear-btn')?.addEventListener('click', ()=>{ const t=document.getElementById('paste-input'); if(t){ t.value=''; t.focus(); }});
+  </script>
+</body>
+</html>

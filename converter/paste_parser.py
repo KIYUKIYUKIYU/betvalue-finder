@@ -12,14 +12,29 @@ from typing import List, Tuple, Optional, Dict, Any
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from app.converter import jp_to_pinnacle, try_parse_jp
+    # 統一ハンデ変換システムを使用
+    from converter.unified_handicap_converter import jp_to_pinnacle, HandicapConversionError
+    # HandicapParserも統合
+    from converter.handicap_parser import HandicapParser
+    
+    def try_parse_jp(jp_str):
+        """統一ハンデ変換システムを使ったパース"""
+        try:
+            pinnacle_value = jp_to_pinnacle(jp_str)
+            return (True, pinnacle_value)
+        except (HandicapConversionError, Exception):
+            return (False, None)
+            
 except ImportError:
-    # 単体テスト時の簡易実装
+    # フォールバック：簡易実装
     def try_parse_jp(jp_str):
         mapping = {
-            "0.1": (True, 0.5),
+            "0.1": (True, 0.05),
+            "02": (True, 0.10), 
             "0半": (True, 0.5),
             "1半": (True, 1.5),
+            "1.5": (True, 1.25),
+            "1.8": (True, 1.40),
         }
         return mapping.get(jp_str, (False, None))
 
@@ -226,6 +241,22 @@ class PasteParser:
             if not line:
                 continue
                 
+            # 時間行をスキップ（HH:MM形式）
+            if re.match(r'^\d{1,2}:\d{2}$', line):
+                continue
+                
+            # まずHandicapParserでハンデを検出
+            try:
+                handicap_str, parsed_value = HandicapParser.detect_handicap_in_text(line)
+                if handicap_str and parsed_value is not None:
+                    # ハンデが見つかった場合、チーム名部分を抽出
+                    team_part = line.replace(f"<{handicap_str}>", "").strip()
+                    pairs.append((team_part, handicap_str))
+                    continue
+            except:
+                pass
+                
+            # フォールバック：従来の正規表現
             m = LINE_RE.match(line)
             if not m:
                 continue
@@ -329,17 +360,34 @@ class PasteParser:
 
 def parse_paste_text(text: str, sport: str = "mlb") -> List[Dict]:
     """
-    便利関数：テキストをパースして試合リストを返す
-    
+    便利関数：テキストをパースして試合リストを返す（時刻情報抽出対応）
+
     Args:
         text: 貼り付けテキスト
         sport: スポーツ種別 ("mlb", "soccer", "nba" など)
-    
+
     Returns:
-        試合情報のリスト
+        試合情報のリスト（時刻情報も含む）
     """
+    # 時刻情報を抽出
+    try:
+        from game_manager.time_parser import time_parser
+        extracted_time = time_parser.extract_time_from_text(text)
+    except Exception:
+        extracted_time = None
+
     parser = PasteParser(sport)
-    return parser.parse_text(text)
+    games = parser.parse_text(text)
+
+    # 全ての試合に時刻情報を追加
+    for game in games:
+        game['extracted_time'] = extracted_time
+        if extracted_time:
+            game['is_deep_night'] = time_parser.is_deep_night_time(extracted_time)
+        else:
+            game['is_deep_night'] = False
+
+    return games
 
 
 # テスト用

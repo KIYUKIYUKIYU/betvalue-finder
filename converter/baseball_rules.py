@@ -138,14 +138,23 @@ def quantize_rakeback(r: float) -> float:
 
 def ev_pct_fullwin_turnover(fair_prob: float, payout_odds: float = 1.9, rakeback_pct: float = 0.0) -> float:
     """
-    turnover方式のEV%：
-      EV = p*O - 1 + r
-      EV% = EV * 100
+    シンプルなレーキバック方式のEV%：
+      実効配当 = 基本配当 + レーキバック
+      EV = 公正勝率 × 実効配当 - 1.0
+      EV% = EV × 100
+
+    例: 公正勝率50%、配当1.9、レーキバック1.5%の場合
+        EV = 0.50 × (1.9 + 0.015) - 1.0 = 0.50 × 1.915 - 1.0 = -0.425%
     """
     p = float(fair_prob)
-    O = float(payout_odds)
+    base_odds = float(payout_odds)
     r = quantize_rakeback(rakeback_pct)
-    ev = p * O - 1.0 + r
+
+    # シンプルな実効配当計算
+    effective_odds = base_odds + r
+
+    # EV計算
+    ev = p * effective_odds - 1.0
     return ev * 100.0
 
 

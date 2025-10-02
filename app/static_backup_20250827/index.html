@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BetValue Finder - ベット価値判定システム</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- ヘッダー -->
+        <header class="header">
+            <h1 class="logo">⚾ BetValue Finder</h1>
+            <p class="subtitle">日本式ハンデの期待値自動判定</p>
+            <button id="theme-toggle" class="theme-toggle">🌙</button>
+        </header>
+
+        <!-- メインカード -->
+        <div class="card">
+            <!-- 入力エリア -->
+            <div class="form-group">
+                <label for="paste-input">ハンデを入力</label>
+                <textarea 
+                    id="paste-input" 
+                    class="paste-input" 
+                    rows="8" 
+                    placeholder="例：&#10;ヤンキース<0.1>&#10;レッドソックス&#10;&#10;ドジャース&#10;パドレス<1半>"
+                ></textarea>
+                <div class="example-text">
+                    ※ &lt;&gt;付きの側がフェイバリット（マイナスライン）
+                </div>
+            </div>
+
+            <!-- 設定エリア -->
+            <div class="settings">
+                <div class="form-group">
+                    <label for="sport-select">競技</label>
+                    <select id="sport-select">
+                        <option value="mlb">MLB</option>
+                        <option value="soccer" disabled>サッカー（準備中）</option>
+                        <option value="nba" disabled>NBA（準備中）</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="rakeback-select">レーキバック</label>
+                    <select id="rakeback-select">
+                        <option value="0">0%</option>
+                        <option value="0.005">0.5%</option>
+                        <option value="0.010">1.0%</option>
+                        <option value="0.015" selected>1.5%</option>
+                        <option value="0.020">2.0%</option>
+                        <option value="0.025">2.5%</option>
+                        <option value="0.030">3.0%</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="date-input">日付</label>
+                    <input type="date" id="date-input" disabled>
+                    <div class="example-text">※ 自動で判定します</div>
+                </div>
+            </div>
+
+            <!-- ボタンエリア -->
+            <div class="button-group">
+                <button id="clear-btn" class="btn btn-secondary">クリア</button>
+                <button id="analyze-btn" class="btn btn-primary">
+                    <span class="btn-text">判定する</span>
+                    <span class="spinner"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 結果表示エリア -->
+        <section id="results-section" class="results-section">
+            <h2>判定結果</h2>
+            <div id="results-container" class="results-container"></div>
+        </section>
+    </div>
+
+    <!-- エラートースト -->
+    <div id="error-toast" class="error-toast"></div>
+
+    <!-- ローディングオーバーレイ -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">オッズデータ取得中...</div>
+        </div>
+    </div>
+
+    <!-- JavaScript読み込み -->
+    <script src="/static/app.js"></script>
+</body>
+</html>

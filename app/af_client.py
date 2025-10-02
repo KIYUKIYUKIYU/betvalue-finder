@@ -36,7 +36,7 @@ def get_pinnacle_lines_from_api_football(fixture_id: int, timeout: float = 8.0) 
     アジアンハンディキャップ相当のラインを抽出。
     戻り値: [{"line": 0.5, "home_odds": 1.95, "away_odds": 1.95}, ...]
     """
-    api_key = os.getenv("API_FOOTBALL_KEY")
+    api_key = os.getenv("API_SPORTS_KEY")
     if not api_key:
         return []
 

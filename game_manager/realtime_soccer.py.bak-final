@@ -1,0 +1,72 @@
+# -*- coding: utf-8 -*-
+from .realtime_game_manager import RealtimeGameManager
+from datetime import datetime
+from typing import Dict, List, Optional
+import asyncio
+
+class RealtimeSoccerGameManager(RealtimeGameManager):
+    API_BASE = "https://v3.football.api-sports.io"
+
+    def __init__(self, api_key: str, **kwargs):
+        super().__init__(api_key=api_key, cache_dir="data/soccer", **kwargs)
+
+    def get_sport_name(self) -> str:
+        return "SOCCER"
+
+    def _prepare_headers(self, headers: Dict) -> Dict:
+        headers["x-apisports-key"] = self.api_key
+        return headers
+
+    async def _fetch_games_async(self, date: datetime, **kwargs) -> List[Dict]:
+        params = {"date": date.strftime("%Y-%m-%d"), "timezone": "Asia/Tokyo"}
+        if kwargs.get("league_id"):
+            params["league"] = str(kwargs.get("league_id"))
+        url = f"{self.API_BASE}/fixtures"
+        data = await self._http_get_async(url, params=params)
+        return [self._format_game_data(g) for g in data.get("response", []) if g]
+
+    async def _fetch_odds_async(self, game_id: str, **kwargs) -> Optional[Dict]:
+        params = {"fixture": game_id, "bookmaker": "4"} # Pinnacle Only
+        url = f"{self.API_BASE}/odds"
+        data = await self._http_get_async(url, params=params)
+        res = data.get("response", [])
+        return self._format_odds_data(res[0]) if res else None
+
+    def match_teams(self, teams: List[str], games: List[Dict]) -> Optional[Dict]:
+        team_a_name, team_b_name = teams[0], teams[1]
+        if not team_a_name or not team_b_name: return None
+        def normalize(name: str) -> str:
+            return (name or "").lower().replace(" ", "").replace(".", "").replace("cf", "").replace("fc", "").replace("kv", "").replace("sc", "").replace("rsc", "")
+        norm_a, norm_b = normalize(team_a_name), normalize(team_b_name)
+        for game in games:
+            norm_home, norm_away = normalize(game.get("home", "")), normalize(game.get("away", ""))
+            if (norm_a == norm_home and norm_b == norm_away) or (norm_a == norm_away and norm_b == norm_home):
+                return game
+        return None
+
+    def _format_game_data(self, d: Dict) -> Optional[Dict]:
+        try:
+            return {"id": d["fixture"]["id"], "home": d["teams"]["home"]["name"], "away": d["teams"]["away"]["name"], "datetime": d["fixture"]["date"]}
+        except (KeyError, TypeError): return None
+
+    def _format_odds_data(self, d: Dict) -> Dict:
+        return {"fixture_id": d.get("fixture", {}).get("id"), "bookmakers": d.get("bookmakers", [])}
+
+    # --- Abstract Method Implementations ---
+    def fetch_games(self, date: datetime, **kwargs) -> List[Dict]:
+        """同期版ゲーム取得（抽象メソッドの実装）"""
+        try:
+            return asyncio.run(self.get_games_realtime(date, **kwargs))
+        except RuntimeError:
+            # The debug script might run into a "loop is already running" error.
+            # This is a simple workaround for the test.
+            loop = asyncio.get_event_loop()
+            return loop.run_until_complete(self.get_games_realtime(date, **kwargs))
+
+    def fetch_odds(self, game_id: str, **kwargs) -> Optional[Dict]:
+        """同期版オッズ取得（抽象メソッドの実装）"""
+        try:
+            return asyncio.run(self.get_odds_realtime(game_id, **kwargs))
+        except RuntimeError:
+            loop = asyncio.get_event_loop()
+            return loop.run_until_complete(self.get_odds_realtime(game_id, **kwargs))

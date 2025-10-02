@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import requests
 
 API = "https://v3.football.api-sports.io"
-HEAD = {"x-apisports-key": os.getenv("API_FOOTBALL_KEY", "")}
+HEAD = {"x-apisports-key": os.getenv("API_SPORTS_KEY", "")}
 TZ = "Asia/Tokyo"
 LEAGUES = [39, 140, 135, 78, 61]  # EPL, LaLiga, SerieA, Bundesliga, Ligue1
 
@@ -47,7 +47,7 @@ def get_bm11_lines(fix_id: int):
 
 def main():
     if not HEAD["x-apisports-key"]:
-        print("ERROR: API_FOOTBALL_KEY is not set", file=sys.stderr)
+        print("ERROR: API_SPORTS_KEY is not set", file=sys.stderr)
         sys.exit(1)
 
     today = datetime.now().date()

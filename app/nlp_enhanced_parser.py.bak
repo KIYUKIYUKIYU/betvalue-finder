@@ -1,0 +1,638 @@
+# -*- coding: utf-8 -*-
+"""
+NLP Enhanced Parser
+機械学習・自然言語処理による高精度ベッティングデータ解析
+"""
+
+import re
+import logging
+from typing import List, Dict, Optional, Tuple, Any
+from dataclasses import dataclass
+from collections import defaultdict
+
+# NLP関連のインポート (オプショナル)
+try:
+    import spacy
+    from transformers import pipeline, AutoTokenizer, AutoModelForTokenClassification
+    NLP_AVAILABLE = True
+except ImportError:
+    spacy = None
+    pipeline = None
+    NLP_AVAILABLE = False
+
+from app.universal_parser import UniversalBetParser
+
+
+@dataclass
+class ParseResult:
+    """パース結果と信頼度情報"""
+    games: List[Dict]
+    confidence: float
+    method_used: str
+    entities_found: List[Dict]
+    processing_time: float
+    fallback_used: bool = False
+
+
+@dataclass
+class EntityInfo:
+    """抽出エンティティ情報"""
+    text: str
+    label: str
+    confidence: float
+    start_pos: int
+    end_pos: int
+
+
+class LocalNLPParser:
+    """ローカルNLP機能を活用した高精度パーサー"""
+
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+        self.fallback_parser = UniversalBetParser()
+
+        # NLP モデルの初期化
+        self.nlp_model = None
+        self.ner_pipeline = None
+        self.is_nlp_ready = False
+
+        self._init_nlp_models()
+
+        # チーム名データベース (エンハンス版)
+        self.team_database = self._build_enhanced_team_database()
+
+        # ハンディキャップパターン (強化版)
+        self.handicap_patterns = self._build_enhanced_handicap_patterns()
+
+        # 信頼度計算用パラメータ
+        self.confidence_weights = {
+            "entity_quality": 0.4,
+            "pattern_match": 0.3,
+            "context_coherence": 0.2,
+            "data_completeness": 0.1
+        }
+
+    def _init_nlp_models(self):
+        """NLPモデルの初期化"""
+        if not NLP_AVAILABLE:
+            self.logger.warning("NLP libraries not available. Using fallback mode.")
+            return
+
+        try:
+            # spaCy日本語モデル
+            try:
+                self.nlp_model = spacy.load("ja_core_news_sm")
+                self.logger.info("✅ spaCy Japanese model loaded successfully")
+            except OSError:
+                self.logger.warning("⚠️ spaCy Japanese model not found. Install with: python -m spacy download ja_core_news_sm")
+                self.nlp_model = None
+
+            # Transformers NERパイプライン (軽量版)
+            try:
+                # 日本語BERT軽量版を使用
+                self.ner_pipeline = pipeline(
+                    "ner",
+                    model="cl-tohoku/bert-base-japanese-char",
+                    aggregation_strategy="simple",
+                    device=-1  # CPU使用
+                )
+                self.logger.info("✅ Transformers NER pipeline loaded successfully")
+            except Exception as e:
+                self.logger.warning(f"⚠️ Transformers NER pipeline failed to load: {e}")
+                self.ner_pipeline = None
+
+            # どちらか一つでも利用可能なら準備完了
+            self.is_nlp_ready = (self.nlp_model is not None) or (self.ner_pipeline is not None)
+
+            if self.is_nlp_ready:
+                self.logger.info("🧠 NLP-enhanced parsing ready")
+            else:
+                self.logger.warning("⚠️ No NLP models available, using rule-based fallback")
+
+        except Exception as e:
+            self.logger.error(f"❌ Failed to initialize NLP models: {e}")
+            self.is_nlp_ready = False
+
+    def _build_enhanced_team_database(self) -> Dict[str, Dict]:
+        """拡張チーム名データベース構築 - JSONファイルから読み込み"""
+        import json
+        import os
+
+        team_database = {}
+
+        # データディレクトリのパス
+        data_dir = os.path.join(os.path.dirname(__file__), "data")
+
+        # 読み込むJSONファイルリスト
+        team_files = [
+            "teams_mlb.json",
+            "teams_npb.json",
+            "teams_premier.json",
+            "teams_laliga.json",
+            "teams_bundesliga.json",
+            "teams_serie_a.json",
+            "teams_ligue1.json",
+            "teams_eredivisie.json",
+            "teams_primeira_liga.json",
+            "teams_scottish_premiership.json",
+            "teams_jupiler_league.json",
+            "teams_champions_league.json",
+            "teams_national.json"
+        ]
+
+        total_teams = 0
+        for file_name in team_files:
+            file_path = os.path.join(data_dir, file_name)
+            try:
+                if os.path.exists(file_path):
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        file_data = json.load(f)
+                        team_database.update(file_data)
+                        total_teams += len(file_data)
+                        self.logger.info(f"✅ {file_name}: {len(file_data)}チーム読み込み完了")
+                else:
+                    self.logger.warning(f"⚠️ Team data file not found: {file_path}")
+            except Exception as e:
+                self.logger.error(f"❌ Failed to load {file_name}: {e}")
+
+        self.logger.info(f"🎯 Total teams loaded: {total_teams} teams")
+
+        # データが読み込めなかった場合のフォールバック
+        if not team_database:
+            self.logger.warning("⚠️ No team data loaded, using minimal fallback")
+            team_database = {
+                "巨人": {"sport": "npb", "full_name": "読売ジャイアンツ", "aliases": ["ジャイアンツ", "Giants"]},
+                "阪神": {"sport": "npb", "full_name": "阪神タイガース", "aliases": ["タイガース", "Tigers"]},
+                "ドジャース": {"sport": "mlb", "full_name": "Los Angeles Dodgers", "aliases": ["LAD", "Dodgers"]},
+                "ヤンキース": {"sport": "mlb", "full_name": "New York Yankees", "aliases": ["NYY", "Yankees"]},
+            }
+
+        return team_database
+
+    def _build_enhanced_handicap_patterns(self) -> List[Dict]:
+        """強化されたハンディキャップパターン"""
+        return [
+            # NPB実際フォーマット：<07>, <02>, <0> など（最高優先度）
+            {"pattern": r"<(\d+)>", "type": "npb_bracket_handicap", "confidence": 0.99},
+
+            # 小数点付き括弧形式：<0.2>, <1.5> など
+            {"pattern": r"<(\d+\.\d+)>", "type": "decimal_bracket_handicap", "confidence": 0.98},
+
+            # 基本パターン
+            {"pattern": r"([+-]?\d+(?:\.\d+)?)", "type": "decimal", "confidence": 0.9},
+            {"pattern": r"(\d+)半", "type": "half_suffix", "confidence": 0.95},
+            {"pattern": r"(\d+)\.5", "type": "point_five", "confidence": 0.95},
+
+            # 日本式表記
+            {"pattern": r"(\d+)/(\d+)", "type": "fraction", "confidence": 0.9},
+            {"pattern": r"([+-]?\d+(?:\.\d+)?)点", "type": "point_suffix", "confidence": 0.8},
+
+            # 複雑なパターン
+            {"pattern": r"([+-])(\d+(?:\.\d+)?)", "type": "signed_number", "confidence": 0.85},
+            {"pattern": r"(\d+)点半", "type": "point_half", "confidence": 0.9},
+
+            # 英語表記
+            {"pattern": r"([+-]?\d+(?:\.\d+)?)\\s*(?:points?|pts?)", "type": "english_points", "confidence": 0.7},
+        ]
+
+    def parse(self, text: str) -> ParseResult:
+        """NLP強化パース - メイン処理"""
+        import time
+        start_time = time.time()
+
+        try:
+            if self.is_nlp_ready:
+                result = self._parse_with_nlp(text)
+            else:
+                result = self._parse_with_fallback(text)
+
+            processing_time = time.time() - start_time
+            result.processing_time = processing_time
+
+            self.logger.info(f"🎯 Parse completed: {result.method_used}, confidence: {result.confidence:.2f}, time: {processing_time:.3f}s")
+            return result
+
+        except Exception as e:
+            self.logger.error(f"❌ Parse failed: {e}")
+            return self._parse_with_fallback(text)
+
+    def _parse_with_nlp(self, text: str) -> ParseResult:
+        """NLP機能を使用したパース"""
+
+        # Step 1: エンティティ抽出
+        entities = self._extract_entities(text)
+
+        # Step 2: チーム名識別
+        teams = self._identify_teams(entities, text)
+
+        # Step 3: ハンディキャップ抽出
+        handicaps = self._extract_handicaps_enhanced(text, entities)
+
+        # Step 4: ゲーム構築
+        games = self._build_games_from_entities(teams, handicaps, text)
+
+        # Step 5: 信頼度計算
+        confidence = self._calculate_confidence(entities, teams, handicaps, games)
+
+        # Step 6: 低信頼度時のフォールバック
+        if confidence < 0.6:
+            fallback_result = self._parse_with_fallback(text)
+            if fallback_result.confidence > confidence:
+                fallback_result.fallback_used = True
+                return fallback_result
+
+        return ParseResult(
+            games=games,
+            confidence=confidence,
+            method_used="nlp_enhanced",
+            entities_found=[entity.__dict__ if hasattr(entity, '__dict__') else entity for entity in entities],
+            processing_time=0.0,  # 後で設定
+            fallback_used=False
+        )
+
+    def _extract_entities(self, text: str) -> List[EntityInfo]:
+        """エンティティ抽出 (spaCy + Transformers)"""
+        entities = []
+
+        # spaCy エンティティ抽出
+        if self.nlp_model:
+            doc = self.nlp_model(text)
+            for ent in doc.ents:
+                entities.append(EntityInfo(
+                    text=ent.text,
+                    label=ent.label_,
+                    confidence=0.8,  # spaCyは信頼度を提供しないため固定値
+                    start_pos=ent.start_char,
+                    end_pos=ent.end_char
+                ))
+
+        # Transformers NER追加
+        if self.ner_pipeline and len(text) < 1000:  # 長すぎるテキストは避ける
+            try:
+                ner_results = self.ner_pipeline(text)
+                for result in ner_results:
+                    entities.append(EntityInfo(
+                        text=result['word'],
+                        label=result['entity_group'],
+                        confidence=result['score'],
+                        start_pos=result['start'],
+                        end_pos=result['end']
+                    ))
+            except Exception as e:
+                self.logger.warning(f"⚠️ Transformers NER failed: {e}")
+
+        return entities
+
+    def _identify_teams(self, entities: List[EntityInfo], text: str) -> List[Dict]:
+        """チーム名識別 (NLP + データベースマッチング)"""
+        teams = []
+
+        # NLPエンティティからチーム候補抽出
+        team_candidates = []
+        for entity in entities:
+            if entity.label in ['PERSON', 'ORG', 'PER', 'B-PER', 'I-PER', 'B-ORG', 'I-ORG']:
+                team_candidates.append(entity.text)
+
+        # 行ごとにチーム検出（位置情報保持）
+        lines = text.split('\n')
+        for line_idx, line in enumerate(lines):
+            line = line.strip()
+            if not line:
+                continue
+
+            for team_name, team_info in self.team_database.items():
+                if team_name in line:
+                    teams.append({
+                        "name": team_name,
+                        "full_name": team_info["full_name"],
+                        "sport": team_info["sport"],
+                        "confidence": 0.9,
+                        "method": "exact_match",
+                        "line_position": line_idx  # 行位置を追加
+                    })
+                else:
+                    # エイリアスマッチング（行ごと）
+                    for alias in team_info["aliases"]:
+                        # 短いエイリアス（3文字以下）は単語境界を使用
+                        if len(alias) <= 3:
+                            import re
+                            pattern = r'\b' + re.escape(alias) + r'\b'
+                            if re.search(pattern, line, re.IGNORECASE):
+                                teams.append({
+                                    "name": team_name,
+                                    "full_name": team_info["full_name"],
+                                    "sport": team_info["sport"],
+                                    "confidence": 0.8,  # 精密マッチなので信頼度向上
+                                    "method": "word_boundary_match",
+                                    "line_position": line_idx
+                                })
+                                break
+                        # 長いエイリアス（4文字以上）は部分マッチング
+                        elif alias in line:
+                            teams.append({
+                                "name": team_name,
+                                "full_name": team_info["full_name"],
+                                "sport": team_info["sport"],
+                                "confidence": 0.7,
+                                "method": "alias_match",
+                                "line_position": line_idx  # 行位置を追加
+                            })
+                            break  # マッチしたらこのチームのエイリアス探索を終了
+
+        # 候補とのマッチング
+        for candidate in team_candidates:
+            for team_name, team_info in self.team_database.items():
+                if self._fuzzy_match(candidate, team_name) > 0.8:
+                    teams.append({
+                        "name": team_name,
+                        "full_name": team_info["full_name"],
+                        "sport": team_info["sport"],
+                        "confidence": 0.6,
+                        "method": "nlp_fuzzy_match"
+                    })
+
+        # 重複除去・ソート
+        seen = set()
+        unique_teams = []
+        for team in sorted(teams, key=lambda x: x["confidence"], reverse=True):
+            team_key = team["name"]
+            if team_key not in seen:
+                seen.add(team_key)
+                unique_teams.append(team)
+
+        return unique_teams[:10]  # 最大10チーム
+
+    def _extract_handicaps_enhanced(self, text: str, entities: List[EntityInfo]) -> List[Dict]:
+        """強化されたハンディキャップ抽出（行位置追跡付き）"""
+        handicaps = []
+        lines = text.split('\n')
+
+        # NLPエンティティから数値抽出
+        for entity in entities:
+            if entity.label in ['CARDINAL', 'QUANTITY', 'NUM', 'B-NUM', 'I-NUM']:
+                try:
+                    # 数値の前後文脈チェック
+                    context = self._get_context(text, entity.start_pos, entity.end_pos)
+                    if self._is_handicap_context(context):
+                        # 行位置を計算
+                        line_position = self._find_line_position(text, entity.start_pos)
+                        handicaps.append({
+                            "value": entity.text,
+                            "confidence": entity.confidence * 0.8,
+                            "method": "nlp_entity",
+                            "context": context,
+                            "line_position": line_position
+                        })
+                except:
+                    pass
+
+        # パターンベース抽出（行位置付き）
+        for pattern_info in self.handicap_patterns:
+            matches = re.finditer(pattern_info["pattern"], text, re.IGNORECASE)
+            for match in matches:
+                line_position = self._find_line_position(text, match.start())
+                raw_value = match.group(1) if match.groups() else match.group(0)
+
+                # NPB特殊フォーマット処理: <07> → 0.7, <02> → 0.2
+                if pattern_info["type"] == "npb_bracket_handicap" and raw_value.isdigit():
+                    if len(raw_value) == 2 and raw_value != "00":
+                        # 2桁の場合は小数点形式に変換
+                        converted_value = f"0.{raw_value[1]}" if raw_value[0] == "0" else f"{raw_value[0]}.{raw_value[1]}"
+                    elif raw_value == "0":
+                        converted_value = "0"
+                    else:
+                        converted_value = raw_value
+                else:
+                    converted_value = raw_value
+
+                handicaps.append({
+                    "value": converted_value,
+                    "confidence": pattern_info["confidence"],
+                    "method": f"pattern_{pattern_info['type']}",
+                    "context": self._get_context(text, match.start(), match.end()),
+                    "line_position": line_position
+                })
+
+        return handicaps
+
+    def _fuzzy_match(self, text1: str, text2: str) -> float:
+        """簡易ファジーマッチング"""
+        if not text1 or not text2:
+            return 0.0
+
+        # 正規化
+        t1 = text1.lower().strip()
+        t2 = text2.lower().strip()
+
+        if t1 == t2:
+            return 1.0
+
+        # 部分一致
+        if t1 in t2 or t2 in t1:
+            return 0.8
+
+        # 共通文字数ベース
+        common_chars = len(set(t1) & set(t2))
+        total_chars = len(set(t1) | set(t2))
+
+        return common_chars / total_chars if total_chars > 0 else 0.0
+
+    def _get_context(self, text: str, start: int, end: int, window: int = 20) -> str:
+        """周辺コンテキスト取得"""
+        start_pos = max(0, start - window)
+        end_pos = min(len(text), end + window)
+        return text[start_pos:end_pos]
+
+    def _find_line_position(self, text: str, char_position: int) -> int:
+        """文字位置から行番号を計算"""
+        lines_before = text[:char_position].count('\n')
+        return lines_before
+
+    def _is_handicap_context(self, context: str) -> bool:
+        """ハンディキャップ文脈判定"""
+        handicap_keywords = ["ハンデ", "ハンディ", "点", "ポイント", "差", "+", "-", "点差", "<", ">", "18:00"]
+        # 時刻と一緒に出現する<>も有効とみなす
+        time_pattern = r"\d{1,2}:\d{2}"
+        import re
+        if re.search(time_pattern, context) and ("<" in context or ">" in context):
+            return True
+        return any(keyword in context for keyword in handicap_keywords)
+
+    def _build_games_from_entities(self, teams: List[Dict], handicaps: List[Dict], text: str) -> List[Dict]:
+        """エンティティから試合データ構築"""
+        games = []
+
+        if len(teams) >= 2:
+            # ペア作成 (リーグブロック分割方式)
+            paired_teams = self._create_line_based_pairs(teams, text)
+
+            for team_a, team_b in paired_teams:
+
+                game = {
+                    "team_a": team_a["name"],
+                    "team_b": team_b["name"],
+                    "team_a_confidence": team_a["confidence"],
+                    "team_b_confidence": team_b["confidence"],
+                    "sport": team_a.get("sport", "unknown")
+                }
+
+                # 行位置に基づいてハンディキャップをマッチング
+                matched_handicap = self._find_handicap_for_teams(team_a, team_b, handicaps)
+                if matched_handicap:
+                    game["handicap"] = matched_handicap["value"]
+                    game["handicap_confidence"] = matched_handicap["confidence"]
+
+                    # フェイバリット判定 (簡易版)
+                    if "+" in matched_handicap["value"] or "-" in matched_handicap["value"]:
+                        if "-" in matched_handicap["value"]:
+                            game["fav_team"] = team_a["name"]
+                        else:
+                            game["fav_team"] = team_b["name"]
+
+                games.append(game)
+
+        return games
+
+    def _create_line_based_pairs(self, teams: List[Dict], text: str) -> List[Tuple[Dict, Dict]]:
+        """リーグ名を区切りとしてテキストをブロックに分け、チームをペアリングする (Robust Version)"""
+        from collections import defaultdict
+        import re
+
+        lines = text.split('\n')
+        league_markers = []
+        # リーグマーカー（例: <リーガ>）の位置を特定
+        for i, line in enumerate(lines):
+            match = re.match(r'[<>\[\]](.+?)[>\<]', line) # < > と [ ] 両方に対応
+            if match:
+                league_markers.append({"name": match.group(1), "line": i})
+        
+        # チームを行番号に基づいてソートしておく
+        sorted_teams = sorted(teams, key=lambda x: x.get("line_position", 0))
+
+        if not league_markers:
+            # リーグマーカーがない場合は、単純に2つずつペアにする
+            return [tuple(sorted_teams[i:i+2]) for i in range(0, len(sorted_teams), 2)]
+
+        # チームをリーグブロックに割り当てる
+        blocks = defaultdict(list)
+        for team in sorted_teams:
+            team_line = team["line_position"]
+            assigned_league = "default"
+            for marker in reversed(league_markers):
+                if team_line > marker["line"]:
+                    assigned_league = f"{marker['name']}_{marker['line']}" # 同じリーグ名が複数ある場合も区別
+                    break
+            blocks[assigned_league].append(team)
+
+        # 各ブロック内でペアリング
+        pairs = []
+        for league_name, teams_in_block in blocks.items():
+            for i in range(0, len(teams_in_block) - 1, 2):
+                pairs.append((teams_in_block[i], teams_in_block[i+1]))
+                
+        return pairs
+
+    def _find_handicap_for_teams(self, team_a: Dict, team_b: Dict, handicaps: List[Dict]) -> Optional[Dict]:
+        """チームペアの行位置に基づいてハンディキャップを検索"""
+        if not handicaps:
+            return None
+
+        # チームの行位置範囲を取得
+        team_a_line = team_a.get("line_position", 0)
+        team_b_line = team_b.get("line_position", 0)
+
+        # チームペアの行位置範囲
+        min_team_line = min(team_a_line, team_b_line)
+        max_team_line = max(team_a_line, team_b_line)
+
+        # 同じペア内のハンディキャップを検索（行位置が近いもの）
+        candidates = []
+        for handicap in handicaps:
+            h_line = handicap.get("line_position", 0)
+            # ハンディキャップがチームペアの行位置範囲内または近い場合
+            if min_team_line <= h_line <= max_team_line + 1:
+                distance = min(abs(h_line - team_a_line), abs(h_line - team_b_line))
+                candidates.append((handicap, distance))
+
+        if candidates:
+            # 最も近い位置のハンディキャップを選択
+            candidates.sort(key=lambda x: (x[1], -x[0]["confidence"]))
+            return candidates[0][0]
+
+        return None
+
+    def _calculate_confidence(self, entities: List[EntityInfo], teams: List[Dict], handicaps: List[Dict], games: List[Dict]) -> float:
+        """総合信頼度計算"""
+
+        # エンティティ品質スコア
+        entity_quality = 0.0
+        if entities:
+            avg_entity_confidence = sum(e.confidence for e in entities) / len(entities)
+            entity_quality = avg_entity_confidence
+
+        # パターンマッチスコア
+        pattern_match = 0.0
+        if teams:
+            avg_team_confidence = sum(t["confidence"] for t in teams) / len(teams)
+            pattern_match = avg_team_confidence
+
+        # コンテキスト一貫性スコア
+        context_coherence = 0.0
+        if games:
+            # 同じスポーツのチームがペアになっているかチェック
+            sports = [g.get("sport", "unknown") for g in games]
+            if len(set(sports)) == 1 and sports[0] != "unknown":
+                context_coherence = 0.9
+            else:
+                context_coherence = 0.5
+
+        # データ完全性スコア
+        data_completeness = 0.0
+        if games:
+            complete_games = sum(1 for g in games if "handicap" in g and "team_a" in g and "team_b" in g)
+            data_completeness = complete_games / len(games)
+
+        # 重み付き総合スコア
+        total_confidence = (
+            entity_quality * self.confidence_weights["entity_quality"] +
+            pattern_match * self.confidence_weights["pattern_match"] +
+            context_coherence * self.confidence_weights["context_coherence"] +
+            data_completeness * self.confidence_weights["data_completeness"]
+        )
+
+        return min(total_confidence, 1.0)
+
+    def _parse_with_fallback(self, text: str) -> ParseResult:
+        """フォールバックパーサー使用"""
+        self.logger.info("🔄 Using fallback rule-based parser")
+
+        fallback_games = self.fallback_parser.parse(text)
+
+        return ParseResult(
+            games=fallback_games,
+            confidence=0.7,  # ルールベースの基準信頼度
+            method_used="rule_based_fallback",
+            entities_found=[],
+            processing_time=0.0,
+            fallback_used=True
+        )
+
+
+class EnhancedUniversalParser:
+    """既存パーサーとNLP強化パーサーの統合クラス"""
+
+    def __init__(self):
+        self.nlp_parser = LocalNLPParser()
+        self.logger = logging.getLogger(__name__)
+
+    def parse(self, text: str) -> List[Dict]:
+        """統合パース - 外部インターフェース互換"""
+        result = self.nlp_parser.parse(text)
+
+        self.logger.info(f"📊 Enhanced parse result: {len(result.games)} games, confidence: {result.confidence:.2f}")
+
+        return result.games
+
+    def parse_detailed(self, text: str) -> ParseResult:
+        """詳細情報付きパース"""
+        return self.nlp_parser.parse(text)

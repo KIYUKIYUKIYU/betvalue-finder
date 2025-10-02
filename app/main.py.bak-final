@@ -1,0 +1,149 @@
+# -*- coding: utf-8 -*-
+"""
+app/main.py
+BetValue Finder API - MLB/サッカー対応版
+モジュール化されたオッズ処理とEV評価を使用
+"""
+
+from __future__ import annotations
+from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
+import os
+import sys
+import json
+import datetime as dt
+from datetime import datetime, timedelta
+import re
+import logging
+import asyncio
+
+# --- 新しいカスタムパーサーをインポート ---
+from app.custom_parser import parse_text as parse_paste_text
+
+# プロジェクトルートをパスに追加
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# 既存のconverterモジュール
+from app.app_converter import jp_to_pinnacle, pinnacle_to_jp, try_parse_jp
+
+# 新しいモジュール
+from converter.odds_processor import OddsProcessor
+from converter.ev_evaluator import EVEvaluator
+from converter.unified_line_evaluator import UnifiedLineEvaluator
+from game_manager.mlb import MLBGameManager
+
+# リアルタイムシステム
+from game_manager.realtime_mlb import RealtimeMLBGameManager
+from game_manager.realtime_soccer import RealtimeSoccerGameManager
+from game_manager.ttl_cache_manager import TTLConfig
+from game_manager.realtime_game_manager import RealtimeConfig
+
+# インテリジェント・プリゲームシステム
+from game_manager.intelligent_pregame import IntelligentPregameSystem
+
+# ロガー設定
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+app = FastAPI(title="BetValue Finder API", version="2.5.0") # バージョンアップ
+
+# CORS設定
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# (Static-files and other app setup code remains the same...)
+
+# --- モデル (変更なし) ---
+class AnalyzePasteRequest(BaseModel):
+    text: str
+    sport: str = "auto"  # auto/mlb/soccer
+    rakeback: float = 0.015
+    jp_odds: float = 1.9
+    date: Optional[str] = None
+
+class GameEvaluation(BaseModel):
+    team_a: str
+    team_b: str
+    team_a_jp: str
+    team_b_jp: str
+    fav_team: Optional[str] = None
+    fav_team_jp: Optional[str] = None
+    jp_line: Optional[str] = None
+    pinnacle_line: Optional[float] = None
+    # ... (rest of the model is the same)
+
+# --- ユーティリティ (変更なし) ---
+def get_api_key() -> str:
+    key = os.environ.get("API_SPORTS_KEY", "").strip()
+    if not key:
+        raise HTTPException(status_code=500, detail="API_SPORTS_KEY not configured")
+    return key
+
+# --- エンドポイント ---
+
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    # ... (same as before)
+    return HTMLResponse(content="<h1>BetValue Finder API v2.5</h1><p>Parser refactored.</p><a href='/docs'>API Docs</a>")
+
+@app.post("/analyze_paste", response_model=List[GameEvaluation])
+async def analyze_paste_endpoint(req: AnalyzePasteRequest):
+    """貼り付けテキストを解析してEV計算（リファクタリング版）"""
+    game_manager = None
+    try:
+        api_key = get_api_key()
+
+        # --- 1. 新しいカスタムパーサーでテキストを解析 ---
+        parsed_games = parse_paste_text(req.text)
+
+        if not parsed_games:
+            raise HTTPException(status_code=400, detail="試合データが見つかりません")
+
+        # --- 2. ハンデをピナクル値に変換 ---
+        for game in parsed_games:
+            if "jp_line" in game:
+                ok, pinn_val = try_parse_jp(game["jp_line"])
+                if ok:
+                    game["fav_line_pinnacle"] = pinn_val
+                else:
+                    # 解析不能なハンデは一旦無視するか、エラーとして扱う
+                    game["error"] = f"Invalid handicap: {game['jp_line']}"
+
+        # (この後のGameManager呼び出しやEV計算のロジックは、次のステップで修正)
+        # 現状は、パーサーと変換機が正しく動くかの確認まで
+        
+        results = []
+        for game in parsed_games:
+            eval_result = GameEvaluation(
+                team_a=game.get("team_a", "N/A"),
+                team_b=game.get("team_b", "N/A"),
+                team_a_jp=game.get("team_a_jp", "N/A"),
+                team_b_jp=game.get("team_b_jp", "N/A"),
+                jp_line=game.get("jp_line"),
+                pinnacle_line=game.get("fav_line_pinnacle"),
+                error=game.get("error")
+            )
+            results.append(eval_result)
+        
+        return results
+
+    except Exception as e:
+        import traceback
+        logging.error(f"Error in analyze_paste: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if game_manager and game_manager._session and not game_manager._session.closed:
+            await game_manager._session.close()
+
+# (Other endpoints remain the same...)

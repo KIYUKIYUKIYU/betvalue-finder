@@ -1,0 +1,491 @@
+/* app/static/style.css */
+/* スマホファースト、ダークモード対応のレスポンシブデザイン */
+
+:root {
+    /* ライトモードのカラー */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f7;
+    --bg-card: #ffffff;
+    --text-primary: #1d1d1f;
+    --text-secondary: #86868b;
+    --border-color: #d2d2d7;
+    --accent-color: #007aff;
+    --success-color: #34c759;
+    --warning-color: #ff9500;
+    --danger-color: #ff3b30;
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="dark"] {
+    /* ダークモードのカラー */
+    --bg-primary: #000000;
+    --bg-secondary: #1c1c1e;
+    --bg-card: #2c2c2e;
+    --text-primary: #ffffff;
+    --text-secondary: #98989f;
+    --border-color: #48484a;
+    --accent-color: #0a84ff;
+    --success-color: #30d158;
+    --warning-color: #ff9f0a;
+    --danger-color: #ff453a;
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    -webkit-font-smoothing: antialiased;
+}
+
+.app-container {
+    max-width: 768px;
+    margin: 0 auto;
+    padding: 0 16px 32px;
+    min-height: 100vh;
+}
+
+/* ヘッダー */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.app-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent-color), #00d4ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* テーマ切替ボタン */
+.theme-toggle {
+    width: 44px;
+    height: 44px;
+    border: none;
+    background-color: var(--bg-card);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-md);
+}
+
+.theme-toggle:active {
+    transform: scale(0.95);
+}
+
+.sun-icon, .moon-icon {
+    color: var(--text-primary);
+    transition: opacity 0.3s ease;
+}
+
+[data-theme="light"] .moon-icon,
+.sun-icon {
+    display: none;
+}
+
+[data-theme="dark"] .sun-icon,
+.moon-icon {
+    display: block;
+}
+
+[data-theme="light"] .sun-icon,
+[data-theme="dark"] .moon-icon {
+    display: block;
+}
+
+/* 設定セクション */
+.settings-section {
+    background-color: var(--bg-card);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.setting-item label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sport-select, .rakeback-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sport-select:focus, .rakeback-select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+/* 入力セクション */
+.input-section {
+    background-color: var(--bg-card);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+.input-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.input-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.clear-btn {
+    padding: 8px 16px;
+    border: none;
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.clear-btn:hover {
+    background-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.paste-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 16px;
+    font-family: "SF Mono", Monaco, "Courier New", monospace;
+    resize: vertical;
+    transition: all 0.2s ease;
+}
+
+.paste-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.analyze-btn {
+    width: 100%;
+    margin-top: 16px;
+    padding: 14px 24px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent-color), #00d4ff);
+    color: white;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.analyze-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.analyze-btn:active {
+    transform: translateY(0);
+}
+
+.analyze-btn.loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.analyze-btn .spinner {
+    display: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.analyze-btn.loading .btn-text {
+    visibility: hidden;
+}
+
+.analyze-btn.loading .spinner {
+    display: block;
+}
+
+@keyframes spin {
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* 結果セクション */
+.results-section {
+    display: none;
+}
+
+.results-section.show {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+.results-section h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.results-container {
+    display: grid;
+    gap: 16px;
+}
+
+/* 結果カード */
+.result-card {
+    background-color: var(--bg-card);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+    border-left: 4px solid var(--border-color);
+    animation: slideUp 0.3s ease;
+}
+
+.result-card.clear-plus {
+    border-left-color: var(--success-color);
+    background: linear-gradient(to right, rgba(52, 199, 89, 0.05), transparent);
+}
+
+.result-card.plus {
+    border-left-color: var(--accent-color);
+    background: linear-gradient(to right, rgba(0, 122, 255, 0.05), transparent);
+}
+
+.result-card.fair {
+    border-left-color: var(--warning-color);
+    background: linear-gradient(to right, rgba(255, 149, 0, 0.05), transparent);
+}
+
+.result-card.minus {
+    border-left-color: var(--danger-color);
+    background: linear-gradient(to right, rgba(255, 59, 48, 0.05), transparent);
+}
+
+.result-card.error {
+    border-left-color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.team-info {
+    flex: 1;
+}
+
+.teams {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.fav-indicator {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.verdict-badge {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.verdict-badge.clear-plus {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.verdict-badge.plus {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.verdict-badge.fair {
+    background-color: var(--warning-color);
+    color: white;
+}
+
+.verdict-badge.minus {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.card-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.stat-value.positive {
+    color: var(--success-color);
+}
+
+.stat-value.negative {
+    color: var(--danger-color);
+}
+
+.card-error {
+    color: var(--danger-color);
+    font-size: 14px;
+    text-align: center;
+    padding: 8px;
+}
+
+/* エラートースト */
+.error-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background-color: var(--danger-color);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    max-width: calc(100% - 32px);
+}
+
+.error-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+/* アニメーション */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* タブレット対応 */
+@media (min-width: 768px) {
+    .app-container {
+        padding: 0 24px 48px;
+    }
+    
+    .settings-grid {
+        grid-template-columns: 200px 200px;
+        justify-content: center;
+        gap: 24px;
+    }
+    
+    .card-stats {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* デスクトップ対応 */
+@media (min-width: 1024px) {
+    .app-header h1 {
+        font-size: 28px;
+    }
+    
+    .results-container {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+}

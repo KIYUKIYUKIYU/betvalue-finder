@@ -11,12 +11,12 @@ TEAM_ALIASES = {
     # アメリカンリーグ東地区
     "New York Yankees": {
         "aliases": ["Yankees", "NYY", "NY Yankees"],
-        "japanese": ["ヤンキース", "ニューヨークヤンキース", "ニューヨーク・ヤンキース"],
+        "japanese": ["ヤンキース", "ニューヨークヤンキース", "ニューヨーク・ヤンキース", "NYヤンキース"],
         "official_jp": "ヤンキース"
     },
     "Boston Red Sox": {
         "aliases": ["Red Sox", "BOS", "Boston"],
-        "japanese": ["レッドソックス", "ボストンレッドソックス", "ボストン・レッドソックス"],
+        "japanese": ["レッドソックス", "ボストンレッドソックス", "ボストン・レッドソックス", "Rソックス"],
         "official_jp": "レッドソックス"
     },
     "Tampa Bay Rays": {
@@ -48,7 +48,7 @@ TEAM_ALIASES = {
     },
     "Chicago White Sox": {
         "aliases": ["White Sox", "CWS", "ChiSox"],
-        "japanese": ["ホワイトソックス", "シカゴホワイトソックス", "シカゴ・ホワイトソックス"],
+        "japanese": ["ホワイトソックス", "シカゴホワイトソックス", "シカゴ・ホワイトソックス", "Wソックス"],
         "official_jp": "ホワイトソックス"
     },
     "Detroit Tigers": {
@@ -146,7 +146,7 @@ TEAM_ALIASES = {
     # ナショナルリーグ西地区
     "Los Angeles Dodgers": {
         "aliases": ["Dodgers", "LAD", "LA Dodgers"],
-        "japanese": ["ドジャース", "ロサンゼルスドジャース", "ロサンゼルス・ドジャース"],
+        "japanese": ["ドジャース", "ロサンゼルスドジャース", "ロサンゼルス・ドジャース", "LAドジャース"],
         "official_jp": "ドジャース"
     },
     "San Diego Padres": {
@@ -161,7 +161,7 @@ TEAM_ALIASES = {
     },
     "Arizona Diamondbacks": {
         "aliases": ["Diamondbacks", "D-backs", "ARI", "Arizona"],
-        "japanese": ["ダイヤモンドバックス", "アリゾナダイヤモンドバックス", "アリゾナ・ダイヤモンドバックス"],
+        "japanese": ["ダイヤモンドバックス", "アリゾナダイヤモンドバックス", "アリゾナ・ダイヤモンドバックス", "Dバックス"],
         "official_jp": "ダイヤモンドバックス"
     },
     "Colorado Rockies": {

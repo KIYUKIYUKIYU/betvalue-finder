@@ -25,57 +25,55 @@ class HandicapInterpolator:
         return round(value, self.precision)
     
     def calculate_line_zero(
-        self, 
+        self,
         line_data: Dict[float, Tuple[float, float]]
     ) -> Optional[Tuple[float, float]]:
         """
-        ライン0のオッズを計算（±1.0のペアから中間値として算出）
-        
-        Args:
-            line_data: {ライン値: (home_odds, away_odds)}
-        
-        Returns:
-            (home_odds, away_odds) or None
+        ライン0のオッズを計算。
+        優先: 公正勝率（マージン除去）を±基準点間で線形補間→オッズへ。
+        基準点は 0 を挟む最近の下側/上側ライン（例: -1.0 と +1.0）があればそれを使用。
         """
-        # ±1.0のペアが存在するか確認
-        if 1.0 not in line_data:
+        if not line_data:
             return None
-        
-        # ±1.0のオッズを取得
-        odds_plus_1 = line_data[1.0]  # ライン+1.0
-        
-        # 対称性を仮定：ライン0は±1.0の中間
-        # ホーム側のライン-1.0とアウェイ側のライン+1.0から推定
-        
-        # 単純な方法：オッズの幾何平均を使用
-        # より精密には勝率ベースで計算すべきだが、まずはシンプルに
-        
-        # ±1.0から勝率を計算して平均を取る方法
-        home_odds_plus1, away_odds_plus1 = odds_plus_1
-        
-        # 勝率に変換（マージン込み）
-        home_prob_plus1 = 1.0 / home_odds_plus1
-        away_prob_plus1 = 1.0 / away_odds_plus1
-        
-        # ライン0での推定勝率（簡易的に中間を取る）
-        # 注：これは簡易実装。より正確には対数オッズ空間での補間が望ましい
-        margin = home_prob_plus1 + away_prob_plus1
-        
-        # ライン0での勝率配分を推定
-        # +1.0でホームが有利なので、0では中間的な値に
-        home_prob_0 = (home_prob_plus1 + away_prob_plus1) / 2
-        away_prob_0 = (away_prob_plus1 + home_prob_plus1) / 2
-        
-        # マージンを維持したまま正規化
-        total = home_prob_0 + away_prob_0
-        home_prob_0 = home_prob_0 * margin / total
-        away_prob_0 = away_prob_0 * margin / total
-        
-        # オッズに変換
-        home_odds_0 = self._round(1.0 / home_prob_0)
-        away_odds_0 = self._round(1.0 / away_prob_0)
-        
-        return home_odds_0, away_odds_0
+
+        keys = sorted(line_data.keys())
+        # 0 を挟む最近のペアを探す
+        lower = None
+        upper = None
+        for k in keys:
+            if k <= 0:
+                lower = k
+            if k >= 0 and upper is None:
+                upper = k
+        if lower is None or upper is None:
+            return None
+
+        if lower == upper:
+            # ちょうど0ラインが存在する
+            return line_data[lower]
+
+        # マージン除去して公正勝率を算出
+        def fair_from_odds(odds_pair: Tuple[float, float]) -> Tuple[float, float]:
+            ho, ao = odds_pair
+            hp = 1.0 / ho
+            ap = 1.0 / ao
+            m = hp + ap
+            return hp / m, ap / m
+
+        home_fair_lower, _ = fair_from_odds(line_data[lower])
+        home_fair_upper, _ = fair_from_odds(line_data[upper])
+
+        # 線形補間（0点）
+        if upper == lower:
+            p_home_0 = home_fair_lower
+        else:
+            t = (0.0 - lower) / (upper - lower)
+            p_home_0 = home_fair_lower + (home_fair_upper - home_fair_lower) * t
+
+        # 公正勝率→オッズ（マージン=1.0想定）
+        p_home_0 = max(1e-6, min(1 - 1e-6, p_home_0))
+        p_away_0 = 1.0 - p_home_0
+        return self._round(1.0 / p_home_0), self._round(1.0 / p_away_0)
     
     def linear_interpolate_odds(
         self,
@@ -86,7 +84,7 @@ class HandicapInterpolator:
         target_line: float
     ) -> Tuple[float, float]:
         """
-        2つのライン間でオッズを線形補間
+        2つのライン間でオッズを線形補間（公正勝率ベース）
         
         Args:
             line_lower: 下側のライン値
@@ -104,19 +102,38 @@ class HandicapInterpolator:
         # 補間比率を計算
         ratio = (target_line - line_lower) / (line_upper - line_lower)
         
-        # 勝率ベースで補間（オッズの逆数）
-        home_prob_lower = 1.0 / odds_lower[0]
-        away_prob_lower = 1.0 / odds_lower[1]
-        home_prob_upper = 1.0 / odds_upper[0]
-        away_prob_upper = 1.0 / odds_upper[1]
+        # マージン除去して公正勝率を算出
+        def fair_from_odds(odds_pair) -> Tuple[float, float]:
+            # 辞書形式とタプル形式の両方に対応
+            if isinstance(odds_pair, dict):
+                ho = float(odds_pair.get('home_odds', odds_pair.get('home', 0)))
+                ao = float(odds_pair.get('away_odds', odds_pair.get('away', 0)))
+            elif isinstance(odds_pair, (tuple, list)) and len(odds_pair) >= 2:
+                ho, ao = float(odds_pair[0]), float(odds_pair[1])
+            else:
+                raise ValueError(f"Invalid odds format: {odds_pair}")
+                
+            hp = 1.0 / ho  # ブックメーカーの確率
+            ap = 1.0 / ao
+            m = hp + ap    # 総マージン
+            return hp / m, ap / m  # 正規化された公正勝率
         
-        # 線形補間
-        home_prob = home_prob_lower + (home_prob_upper - home_prob_lower) * ratio
-        away_prob = away_prob_lower + (away_prob_upper - away_prob_lower) * ratio
+        home_fair_lower, away_fair_lower = fair_from_odds(odds_lower)
+        home_fair_upper, away_fair_upper = fair_from_odds(odds_upper)
         
-        # オッズに変換
-        home_odds = self._round(1.0 / home_prob)
-        away_odds = self._round(1.0 / away_prob)
+        # 公正勝率を線形補間
+        home_fair = home_fair_lower + (home_fair_upper - home_fair_lower) * ratio
+        away_fair = away_fair_lower + (away_fair_upper - away_fair_lower) * ratio
+        
+        # 正規化（合計=1.0を保証）
+        total_fair = home_fair + away_fair
+        if total_fair > 0:
+            home_fair /= total_fair
+            away_fair /= total_fair
+        
+        # 公正オッズに変換（マージン=0）
+        home_odds = self._round(1.0 / home_fair) if home_fair > 1e-6 else 999.0
+        away_odds = self._round(1.0 / away_fair) if away_fair > 1e-6 else 999.0
         
         return home_odds, away_odds
     
@@ -159,15 +176,21 @@ class HandicapInterpolator:
         actual_min = max(min_line, available_lines[0])
         actual_max = min(max_line, available_lines[-1])
         
-        # 補間対象のライン値を生成
+        # 補間対象のライン値を生成（改良版：整数ベースで精度向上）
         target_lines = []
-        current = actual_min
-        while current <= actual_max:
-            # 丸め誤差を考慮
-            rounded = round(current / step) * step
-            if actual_min <= rounded <= actual_max:
-                target_lines.append(rounded)
-            current += step
+        
+        # step の逆数を使って整数演算で精度を確保
+        step_inv = int(round(1.0 / step))
+        min_int = int(round(actual_min * step_inv))
+        max_int = int(round(actual_max * step_inv))
+        
+        for i in range(min_int, max_int + 1):
+            line_val = i / step_inv
+            # 精度を考慮した丸め
+            line_val = round(line_val, 2)
+            
+            if actual_min <= line_val <= actual_max:
+                target_lines.append(line_val)
         
         # 各ターゲットラインに対して補間
         for target in target_lines:
@@ -334,6 +357,25 @@ def get_fair_prob_for_line(
     """
     interpolator = HandicapInterpolator()
     return interpolator.calculate_fair_probs_for_line(line_data, target_line)
+
+
+def interpolate_odds_for_line(
+    line_data: Dict[float, Tuple[float, float]],
+    target_line: float
+) -> Optional[Tuple[float, float]]:
+    """
+    指定されたラインのオッズを補間計算する（モジュールレベル関数）
+    正しい公正勝率ベース補間を使用
+
+    Args:
+        line_data: {ライン値: (home_odds, away_odds)} の辞書
+        target_line: 計算したいライン値
+
+    Returns:
+        (home_odds, away_odds) のタプル、または None
+    """
+    interpolator = HandicapInterpolator()
+    return interpolator.get_odds_for_line(line_data, target_line, allow_interpolation=True)
 
 
 # テスト用のサンプルデータと実行例
