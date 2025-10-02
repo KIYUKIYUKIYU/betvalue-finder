@@ -285,11 +285,22 @@ class EVEvaluator:
             home_odds, away_odds = odds_data[target_line]
             raw_odds = home_odds if side == "home" else away_odds
         else:
-            from .handicap_interpolator import interpolate_odds_for_line
-            interpolated_odds = interpolate_odds_for_line(odds_data, target_line)
-            if interpolated_odds:
-                home_odds, away_odds = interpolated_odds
-                raw_odds = home_odds if side == "home" else away_odds
+            # 生オッズの線形補間（fair_prob_for_team_at_lineと同じロジック）
+            from .baseball_rules import linear_interpolate
+
+            available_lines = sorted(odds_data.keys())
+            lower = max([a for a in available_lines if a <= target_line], default=None)
+            upper = min([a for a in available_lines if a >= target_line], default=None)
+
+            if lower is not None and upper is not None:
+                home_odds_lower, away_odds_lower = odds_data[lower]
+                home_odds_upper, away_odds_upper = odds_data[upper]
+
+                # 生オッズを線形補間
+                home_odds_interp = linear_interpolate(lower, home_odds_lower, upper, home_odds_upper, target_line)
+                away_odds_interp = linear_interpolate(lower, away_odds_lower, upper, away_odds_upper, target_line)
+
+                raw_odds = home_odds_interp if side == "home" else away_odds_interp
 
         # 2. 厳密な公正確率を計算 (fair_prob_for_team_at_line を使用)
         # この関数は従来の実装に合わせた座標系を使用
@@ -322,14 +333,22 @@ class EVEvaluator:
 
         # 3. 厳密な公正確率から、公正オッズとEVを計算
         fair_odds = 1.0 / fair_prob if fair_prob > 0 else None
-        
+
+        # デバッグログ
+        print(f"  📊 FAIR ODDS CALC: side={side}, line={target_line}")
+        fair_odds_debug = f"{fair_odds:.3f}" if fair_odds is not None else "None"
+        print(f"     raw_odds={raw_odds}, fair_prob={fair_prob:.5f}, fair_odds={fair_odds_debug}")
+        logger.info(f"  📊 FAIR ODDS CALC: side={side}, line={target_line}")
+        fair_odds_str = f"{fair_odds:.3f}" if fair_odds is not None else "None"
+        logger.info(f"     raw_odds={raw_odds}, fair_prob={fair_prob:.5f}, fair_odds={fair_odds_str}")
+
         ev_pct_plain = (fair_prob * self.jp_odds - 1.0) * 100
-        
+
         effective_odds = self.jp_odds + self.rakeback
         ev_pct_rake = (fair_prob * effective_odds - 1.0) * 100
-        
+
         verdict = self.decide_verdict(ev_pct_rake)
-        
+
         return {
             "line": target_line,
             "side": side,
@@ -412,21 +431,30 @@ class EVEvaluator:
         # 補間用の上下ラインを探す
         lower = max([a for a in anchors if a <= target_line_for_team], default=None)
         upper = min([a for a in anchors if a >= target_line_for_team], default=None)
-        
+
         if lower is None or upper is None:
             return None
-        
+
         # 生オッズを補間してからマージン除去
         home_odds_lower, away_odds_lower = usable[lower]
         home_odds_upper, away_odds_upper = usable[upper]
+
+        print(f"  🔧 INTERPOLATION: lower={lower}, upper={upper}")
+        print(f"     At {lower}: home={home_odds_lower}, away={away_odds_lower}")
+        print(f"     At {upper}: home={home_odds_upper}, away={away_odds_upper}")
 
         # 生オッズを線形補間
         home_odds_interp = linear_interpolate(lower, home_odds_lower, upper, home_odds_upper, target_line_for_team)
         away_odds_interp = linear_interpolate(lower, away_odds_lower, upper, away_odds_upper, target_line_for_team)
 
+        print(f"     Interpolated at {target_line_for_team}: home={home_odds_interp:.4f}, away={away_odds_interp:.4f}")
+
         # 補間後の生オッズからマージン除去
         p_home_interp, _ = remove_margin_fair_probs(home_odds_interp, away_odds_interp)
         p_team = p_home_interp if team_side == "home" else (1.0 - p_home_interp)
+
+        print(f"     After margin removal: p_home={p_home_interp:.5f}, p_away={1.0-p_home_interp:.5f}")
+        print(f"     Returning for {team_side}: {p_team:.5f}")
         
         return p_team
 
