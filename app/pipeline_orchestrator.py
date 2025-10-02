@@ -921,27 +921,12 @@ class BettingPipelineOrchestrator:
                     requested_result = ev_evaluator.evaluate_simplified_line(legacy_odds, pinnacle_line, requested_side)
                     self.logger.info(f"🔍 REQUESTED RESULT: {requested_result}")
 
-                    # HOMEがフェイバリット/アンダードック判定によるライン符号決定
-                    home_team_api = game.get('team_a', '')  # パーサーからのHOMEチーム
-                    is_home_favorite = (requested_team == home_team_api and requested_side == "home")
-
-                    # 本質的修正: フェイバリット/アンダードック判定に基づくライン参照
-                    if is_home_favorite:
-                        # HOMEがフェイバリット → マイナスライン（HOMEにハンデを与える）
-                        home_line = -abs(pinnacle_line) if pinnacle_line > 0 else pinnacle_line
-                        away_line = -abs(pinnacle_line) if pinnacle_line > 0 else pinnacle_line
-                    else:
-                        # HOMEがアンダードック → プラスライン（HOMEがハンデをもらう）
-                        home_line = abs(pinnacle_line) if pinnacle_line < 0 else pinnacle_line
-                        away_line = abs(pinnacle_line) if pinnacle_line < 0 else pinnacle_line
-
                     # 対戦相手チームのEV計算
+                    # 重要: 両チームとも同じピナクルラインを使用して、同じオッズペアから公正確率を計算
                     opposite_side = "away" if requested_side == "home" else "home"
-                    opposite_line = away_line if opposite_side == "away" else home_line
 
-                    self.logger.info(f"🔍 FAVORITE LOGIC: home_favorite={is_home_favorite}, home_line={home_line}, away_line={away_line}")
-                    self.logger.info(f"🔍 OPPOSITE BET: side={opposite_side}, line={opposite_line}")
-                    opposite_result = ev_evaluator.evaluate_simplified_line(legacy_odds, opposite_line, opposite_side)
+                    self.logger.info(f"🔍 OPPOSITE BET: side={opposite_side}, line={pinnacle_line} (同じラインを使用)")
+                    opposite_result = ev_evaluator.evaluate_simplified_line(legacy_odds, pinnacle_line, opposite_side)
                     self.logger.info(f"🔍 OPPOSITE RESULT: {opposite_result}")
 
                     # Use original parser output for jp_line (Japanese bookmaker representation)
@@ -980,8 +965,8 @@ class BettingPipelineOrchestrator:
                     game_with_ev['raw_odds_dog'] = opposite_raw_odds
                     game_with_ev['rakeback_applied'] = rakeback
 
-                    # 双方向オッズ情報を追加
-                    game_with_ev['pinnacle_line_dog'] = opposite_line  # 対戦相手側のPinnacleライン
+                    # 双方向オッズ情報を追加（両チームとも同じピナクルラインを使用）
+                    game_with_ev['pinnacle_line_dog'] = pinnacle_line  # 対戦相手も同じPinnacleライン
                     game_with_ev['jp_line_dog'] = legacy_odds  # 日本式オッズ（対戦相手も同じ）
 
                     # アンダードッグチーム名を特定
