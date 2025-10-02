@@ -32,8 +32,9 @@ setup_logging_middleware(app)
 # ログAPI エンドポイントの追加
 app.include_router(logging_router)
 
-# 静的ファイルの設定
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+# 静的ファイルの設定（存在する場合のみ）
+if os.path.exists("app/static"):
+    app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Pipeline Orchestrator の初期化（API keyは実行時に設定）
 def get_pipeline():
