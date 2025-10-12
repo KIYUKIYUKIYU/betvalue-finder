@@ -11,10 +11,12 @@ venv_wsl/
 
 # データ・出力
 data/*.json
+!data/league_names_mapping.json
 data/*.csv
 scripts/output/*.csv
 *.sqlite3
 *.db
+!database/unified_teams.json
 
 # IDE
 .vscode/
@@ -50,3 +52,4 @@ debug/
 # User input files
 user_input*.txt
 verify_pattern.txt
+bybit-dual-ml-bot/
