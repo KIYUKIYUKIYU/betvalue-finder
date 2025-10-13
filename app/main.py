@@ -193,3 +193,13 @@ async def analyze_paste_endpoint(req: AnalyzePasteRequest):
         log_manager.log_error("Pipeline execution failed in API endpoint", e)
         error_detail = f"Analysis failed: {str(e)[:200]}..."  # Truncate long error messages
         raise HTTPException(status_code=500, detail=error_detail)
+
+@app.get("/debug/env")
+async def debug_env():
+    """環境変数デバッグ用エンドポイント（本番では削除）"""
+    return {
+        "ODDS_API_KEY": "設定済み" if os.environ.get("ODDS_API_KEY") else "未設定",
+        "API_SPORTS_KEY": "設定済み" if os.environ.get("API_SPORTS_KEY") else "未設定",
+        "DISCORD_WEBHOOK_URL": "設定済み" if os.environ.get("DISCORD_WEBHOOK_URL") else "未設定",
+        "all_env_keys": [k for k in os.environ.keys() if not k.startswith("_")]
+    }
