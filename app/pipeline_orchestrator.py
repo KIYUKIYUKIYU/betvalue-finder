@@ -15,14 +15,274 @@ from enum import Enum
 # ロギングシステムのインポート
 from app.logging_system import log_manager
 
+
+def convert_to_day_crossing_format(iso_datetime_str: str) -> str:
+    """
+    ISO 8601形式の日時を日跨ぎ表記に変換
+    例: "2025-10-06T04:00:00Z" → "10/5 28:00"
+
+    Args:
+        iso_datetime_str: ISO 8601形式の日時文字列
+
+    Returns:
+        日跨ぎ表記の文字列 (例: "10/5 28:00")
+    """
+    if not iso_datetime_str:
+        return None
+
+    try:
+        # ISO 8601形式をパース (UTC)
+        dt = datetime.fromisoformat(iso_datetime_str.replace('Z', '+00:00'))
+
+        # 日本時間に変換 (UTC+9)
+        jst_dt = dt + timedelta(hours=9)
+
+        # 時間が0~3時の場合、前日の24+時間表記に変換
+        if jst_dt.hour < 4:
+            # 前日の日付を取得
+            prev_day = jst_dt - timedelta(days=1)
+            # 24+時間形式
+            hour_24plus = 24 + jst_dt.hour
+            return f"{prev_day.month}/{prev_day.day} {hour_24plus}:{jst_dt.minute:02d}"
+        else:
+            # 通常の時間表記
+            return f"{jst_dt.month}/{jst_dt.day} {jst_dt.hour}:{jst_dt.minute:02d}"
+
+    except Exception as e:
+        logging.warning(f"日時変換エラー: {iso_datetime_str} - {e}")
+        return iso_datetime_str
+
+
+def get_sort_key_from_datetime(iso_datetime_str: str) -> int:
+    """
+    ISO 8601形式の日時からソート用のキーを生成
+
+    Args:
+        iso_datetime_str: ISO 8601形式の日時文字列
+
+    Returns:
+        ソート用の整数キー (UNIX timestamp)
+    """
+    if not iso_datetime_str:
+        return 999999999999  # 日時がない場合は最後尾に
+
+    try:
+        dt = datetime.fromisoformat(iso_datetime_str.replace('Z', '+00:00'))
+        return int(dt.timestamp())
+    except Exception as e:
+        logging.warning(f"日時ソートキー生成エラー: {iso_datetime_str} - {e}")
+        return 999999999999
+
+
+def create_english_to_japanese_team_dict() -> dict:
+    """
+    英語→日本語チーム名の逆引き辞書を作成
+
+    Returns:
+        dict: 正規化された英語チーム名 → 日本語チーム名の辞書
+    """
+    from converter.comprehensive_team_translator import ComprehensiveTeamTranslator
+
+    translator = ComprehensiveTeamTranslator()
+    reverse_dict = {}
+
+    for jp_name, en_key in translator.team_translation_dict.items():
+        # 正規化: 小文字・スペース除去
+        normalized = en_key.lower().replace(' ', '')
+        reverse_dict[normalized] = jp_name
+
+    return reverse_dict
+
+
+def translate_team_to_japanese(english_name: str, reverse_dict: dict) -> str:
+    """
+    英語チーム名を日本語に翻訳
+
+    Args:
+        english_name: 英語チーム名（例: "Real Madrid"）
+        reverse_dict: 逆引き辞書
+
+    Returns:
+        日本語チーム名（例: "レアル・マドリード"）
+    """
+    if not english_name:
+        return english_name
+
+    # 正規化
+    normalized = english_name.lower().replace(' ', '')
+
+    # 完全一致
+    if normalized in reverse_dict:
+        return reverse_dict[normalized]
+
+    # 部分一致（fallback）
+    for en_key, jp_name in reverse_dict.items():
+        if normalized in en_key or en_key in normalized:
+            return jp_name
+
+    # 翻訳できない場合は元の名前を返す
+    return english_name
+
+
+def translate_league_name_to_japanese(api_league_name: str) -> str:
+    """
+    APIリーグ名を日本語表記に変換
+
+    Args:
+        api_league_name: APIから取得したリーグ名（例: "soccer_spain_la_liga"）
+
+    Returns:
+        日本語リーグ名（例: "ラ・リーガ"）
+    """
+    # 包括的なリーグ名翻訳マッピング
+    league_translations = {
+        # サッカー - ヨーロッパ主要リーグ
+        "soccer_spain_la_liga": "ラ・リーガ",
+        "soccer_italy_serie_a": "セリエA",
+        "soccer_france_ligue_one": "リーグアン",
+        "soccer_england_epl": "プレミアリーグ",
+        "soccer_germany_bundesliga": "ブンデスリーガ",
+        "soccer_netherlands_eredivisie": "エールディビジ",
+        "soccer_portugal_primeira_liga": "プリメイラリーガ",
+        "soccer_belgium_first_div": "ベルギーリーグ",
+        "soccer_scotland_premiership": "スコットランドリーグ",
+        "soccer_turkey_super_league": "スュペル・リグ",
+
+        # サッカー - その他ヨーロッパ
+        "soccer_austria_bundesliga": "オーストリアリーグ",
+        "soccer_switzerland_superleague": "スイスリーグ",
+        "soccer_denmark_superliga": "デンマークリーグ",
+        "soccer_sweden_allsvenskan": "スウェーデンリーグ",
+        "soccer_norway_eliteserien": "ノルウェーリーグ",
+        "soccer_russia_premier_league": "ロシアリーグ",
+        "soccer_greece_super_league": "ギリシャリーグ",
+        "soccer_poland_ekstraklasa": "ポーランドリーグ",
+        "soccer_czech_republic_fnl": "チェコリーグ",
+
+        # サッカー - 南米
+        "soccer_brazil_campeonato": "ブラジルリーグ",
+        "soccer_argentina_primera_division": "アルゼンチンリーグ",
+        "soccer_colombia_primera_a": "コロンビアリーグ",
+        "soccer_chile_primera_division": "チリリーグ",
+        "soccer_uruguay_primera_division": "ウルグアイリーグ",
+
+        # サッカー - 北中米
+        "soccer_mexico_ligamx": "リーガMX",
+        "soccer_usa_mls": "MLS",
+
+        # サッカー - アジア
+        "soccer_japan_j_league": "Jリーグ",
+        "soccer_korea_k_league": "Kリーグ",
+        "soccer_china_super_league": "中国スーパーリーグ",
+        "soccer_australia_aleague": "Aリーグ",
+
+        # サッカー - 国際大会
+        "soccer_uefa_champs_league": "チャンピオンズリーグ",
+        "soccer_uefa_europa_league": "ヨーロッパリーグ",
+        "soccer_uefa_europa_conference_league": "カンファレンスリーグ",
+        "soccer_conmebol_copa_libertadores": "コパ・リベルタドーレス",
+        "soccer_fifa_world_cup": "ワールドカップ",
+        "soccer_uefa_european_championship": "ユーロ",
+        "soccer_copa_america": "コパ・アメリカ",
+
+        # 野球 - MLB
+        "baseball_mlb": "MLB",
+        "americanfootball_mlb": "MLB",
+
+        # 野球 - NPB
+        "baseball_japan_npb": "NPB",
+        "baseball_npb": "NPB",
+
+        # 野球 - その他
+        "baseball_kbo": "KBO",
+        "baseball_cpbl": "CPBL",
+
+        # バスケットボール - NBA
+        "basketball_nba": "NBA",
+        "basketball_nba_preseason": "NBA(プレシーズン)",
+
+        # バスケットボール - その他
+        "basketball_euroleague": "ユーロリーグ",
+        "basketball_ncaab": "NCAA",
+        "basketball_wnba": "WNBA",
+        "basketball_nbl": "NBL",
+        "basketball_spain_acb": "ACB",
+
+        # アメフト
+        "americanfootball_nfl": "NFL",
+        "americanfootball_ncaaf": "NCAA(アメフト)",
+
+        # アイスホッケー
+        "icehockey_nhl": "NHL",
+        "icehockey_sweden_hockey_league": "SHL",
+        "icehockey_khl": "KHL",
+
+        # テニス
+        "tennis_atp": "ATP",
+        "tennis_wta": "WTA",
+
+        # その他
+        "rugbyleague_nrl": "NRL",
+        "cricket_test_match": "クリケット(テスト)",
+        "cricket_odi": "クリケット(ODI)",
+        "cricket_t20": "クリケット(T20)",
+        "golf_masters": "マスターズ",
+        "boxing": "ボクシング",
+        "mma_ufc": "UFC",
+    }
+
+    # 変換マッピングに存在すれば日本語名を返す
+    if api_league_name and api_league_name.lower() in league_translations:
+        return league_translations[api_league_name.lower()]
+
+    # 存在しない場合は元の名前を整形して返す
+    if api_league_name:
+        # アンダースコアを削除して大文字化
+        return api_league_name.replace('_', ' ').upper()
+
+    return "不明"
+
+
+def group_and_sort_games_by_league(games: List[Dict]) -> List[Dict]:
+    """
+    試合をリーグ別にグルーピングし、各リーグ内で時間順にソート
+
+    Args:
+        games: 試合データのリスト
+
+    Returns:
+        リーグ別・時間順にソートされた試合データのリスト
+    """
+    from collections import defaultdict
+
+    # リーグ別にグルーピング
+    games_by_league = defaultdict(list)
+    for game in games:
+        league = game.get('sport', 'Unknown')
+        games_by_league[league].append(game)
+
+    # 各リーグ内で時間順にソート
+    sorted_games = []
+    for league in sorted(games_by_league.keys()):  # リーグ名でソート
+        league_games = games_by_league[league]
+        # 試合開始時刻でソート (raw dateを使用)
+        league_games.sort(key=lambda g: get_sort_key_from_datetime(
+            g.get('_raw_game_date')  # 内部的に保持するraw date
+        ))
+        sorted_games.extend(league_games)
+
+    return sorted_games
+
 # 既存コンポーネントのインポート
 from app.nlp_enhanced_parser import EnhancedUniversalParser as EnhancedBettingParser
 from app.enhanced_team_mapper import EnhancedTeamMapper
 from converter.unified_handicap_converter import jp_to_pinnacle
 from converter.ev_evaluator import EVEvaluator
 from game_manager.realtime_soccer import RealtimeSoccerGameManager
+from game_manager.realtime_theodds_soccer import RealtimeTheOddsSoccerGameManager
 from game_manager.realtime_mlb import RealtimeMLBGameManager
 from game_manager.realtime_npb import RealtimeNPBGameManager
+from game_manager.realtime_theodds_nba import RealtimeTheOddsNBAGameManager
 from converter.comprehensive_team_translator import ComprehensiveTeamTranslator
 from converter.odds_processor import OddsProcessor
 from converter.unified_line_evaluator import UnifiedLineEvaluator
@@ -70,13 +330,15 @@ class GameManagerFactory:
     統一設定ベースの生成もサポート
     """
 
-    def __init__(self, api_key: str, use_unified: bool = False):
+    def __init__(self, api_key: str, use_unified: bool = False, theodds_api_key: Optional[str] = None):
         """
         Args:
-            api_key: APIキー
+            api_key: API-Sports APIキー
             use_unified: 統一設計を使用するか（デフォルト: False = 既存動作維持）
+            theodds_api_key: The Odds API キー（指定時はThe Odds APIを使用）
         """
         self.api_key = api_key
+        self.theodds_api_key = theodds_api_key
         self.use_unified = use_unified
         self.logger = log_manager.main_logger
 
@@ -94,31 +356,50 @@ class GameManagerFactory:
 
         # 既存動作を完全維持（デフォルト）
         if sport_lower in ['soccer', 'football']:
-            # Soccer は __init__ 内で cache_dir="data/soccer" をハードコードしているため指定不要
-            return RealtimeSoccerGameManager(api_key=self.api_key)
+            # The Odds APIキーが指定されている場合は The Odds API を使用
+            if self.theodds_api_key:
+                self.logger.info(f"🌟 Using The Odds API for {sport}")
+                return RealtimeTheOddsSoccerGameManager(api_key=self.theodds_api_key)
+            else:
+                # Soccer は __init__ 内で cache_dir="data/soccer" をハードコードしているため指定不要
+                return RealtimeSoccerGameManager(api_key=self.api_key)
         elif sport_lower in ['mlb', 'baseball']:
             return RealtimeMLBGameManager(api_key=self.api_key, cache_dir="data/mlb", enable_retries=False)
         elif sport_lower in ['npb']:
             return RealtimeNPBGameManager(api_key=self.api_key, cache_dir="data/npb")
+        elif sport_lower in ['nba', 'basketball']:
+            if self.theodds_api_key:
+                self.logger.info(f"🌟 Using The Odds API for {sport}")
+                return RealtimeTheOddsNBAGameManager(api_key=self.theodds_api_key)
+            else:
+                self.logger.warning(f"NBA requires The Odds API key")
+                raise ValueError("NBA requires The Odds API key")
         else:
             self.logger.warning(f"Unknown sport: {sport}, using Soccer manager as fallback")
-            return RealtimeSoccerGameManager(api_key=self.api_key)
+            if self.theodds_api_key:
+                return RealtimeTheOddsSoccerGameManager(api_key=self.theodds_api_key)
+            else:
+                return RealtimeSoccerGameManager(api_key=self.api_key)
 
 class BettingPipelineOrchestrator:
     """ベッティング分析パイプラインの統合オーケストレーター"""
 
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, theodds_api_key: Optional[str] = None):
         self.logger = log_manager.pipeline_logger
         self.api_key = api_key
+        self.theodds_api_key = theodds_api_key
 
         # コンポーネントの初期化
         self.parser = EnhancedBettingParser()
         self.team_mapper = EnhancedTeamMapper()
-        self.game_manager_factory = GameManagerFactory(api_key)
+        self.game_manager_factory = GameManagerFactory(api_key, theodds_api_key=theodds_api_key)
         self.odds_processor = OddsProcessor()
         self.line_evaluator = UnifiedLineEvaluator()
         self.team_translator = ComprehensiveTeamTranslator()
         # MockJapaneseBookmaker removed - using original parser output for jp_line
+
+        # 英語→日本語チーム名翻訳用の逆引き辞書を初期化
+        self.en_to_jp_team_dict = create_english_to_japanese_team_dict()
 
         # 設定
         self.default_sport_hint = "mixed"
@@ -475,16 +756,28 @@ class BettingPipelineOrchestrator:
 
                 # 'mixed'の場合は実際のスポーツを推定
                 if sport == 'mixed' or sport == 'unknown':
-                    # 日本の野球チーム（NPB）を素早く特定
+                    # 日本の野球チーム（NPB）とNBAチームを素早く特定
                     team_a = game.get('team_a', '')
                     team_b = game.get('team_b', '')
-                    jpb_teams = ['西武', 'ロッテ', '巨人', '阪神', '中日', '広島', 'ヤクルト', '横浜', 'オリックス', 'ソフトバンク', '楽天', '日本ハム']
+                    # NPB teams - both Japanese and English names
+                    npb_teams_jp = ['西武', 'ロッテ', '巨人', '阪神', '中日', '広島', 'ヤクルト', '横浜', 'オリックス', 'ソフトバンク', '楽天', '日本ハム']
+                    npb_teams_en = ['lions', 'marines', 'giants', 'tigers', 'dragons', 'carp', 'swallows', 'baystars', 'buffaloes', 'hawks', 'eagles', 'fighters']
+                    nba_teams_jp = ['レイカーズ', 'ウォリアーズ', 'セルティックス', 'ヒート', 'ネッツ', 'バックス', 'サンズ', 'ナゲッツ', 'クリッパーズ', 'マーベリックス']
+                    nba_teams_en = ['lakers', 'warriors', 'celtics', 'heat', 'nets', 'bucks', 'suns', 'nuggets', 'clippers', 'mavericks', 'knicks', 'raptors']
 
-                    if any(jp_team in team_a or jp_team in team_b for jp_team in jpb_teams):
+                    # Check NPB first (Japanese and English)
+                    if any(jp_team in team_a or jp_team in team_b for jp_team in npb_teams_jp) or \
+                       any(en_team in team_a.lower() or en_team in team_b.lower() for en_team in npb_teams_en):
                         detected_sport = 'npb'
                         sport = detected_sport
                         game['sport'] = sport
                         log_manager.main_logger.info(f"🏟️ NPB DETECTION: {game.get('team_a', '?')} vs {game.get('team_b', '?')} -> NPB")
+                    elif any(nba_team in team_a or nba_team in team_b for nba_team in nba_teams_jp) or \
+                         any(nba_team in team_a.lower() or nba_team in team_b.lower() for nba_team in nba_teams_en):
+                        detected_sport = 'nba'
+                        sport = detected_sport
+                        game['sport'] = sport
+                        log_manager.main_logger.info(f"🏀 NBA DETECTION: {game.get('team_a', '?')} vs {game.get('team_b', '?')} -> NBA")
                     else:
                         # より高度な検出が必要な場合のみAPI呼び出し
                         try:
@@ -538,10 +831,19 @@ class BettingPipelineOrchestrator:
                         games_tomorrow = []
                     api_games = games_today + games_tomorrow
 
-                    api_games_by_sport[sport] = api_games
-                    total_api_games += len(api_games)
+                    # PregameFilterを適用（未来の試合のみ）
+                    from game_manager.pregame_filter import PregameFilter
+                    log_manager.main_logger.info(f"🔍 DEBUG BEFORE FILTER: {sport} has {len(api_games)} games")
+                    pregame_games = PregameFilter.filter_pregame_games(api_games, buffer_minutes=0)
+                    filtered_count = len(api_games) - len(pregame_games)
+                    log_manager.main_logger.info(f"🔍 DEBUG AFTER FILTER: {sport} has {len(pregame_games)} games, filtered {filtered_count}")
+                    if filtered_count > 0:
+                        self.logger.info(f"🔍 {sport}: Filtered out {filtered_count} past/live games")
 
-                    self.logger.info(f"✅ {sport}: {len(api_games)} API games retrieved")
+                    api_games_by_sport[sport] = pregame_games
+                    total_api_games += len(pregame_games)
+
+                    self.logger.info(f"✅ {sport}: {len(pregame_games)} pregame API games retrieved")
                     log_manager.main_logger.info(f"🌐 API FETCH: {sport} fetched {len(api_games)} games")
 
                 except ValueError as ve:
@@ -605,16 +907,28 @@ class BettingPipelineOrchestrator:
                 # Stage2でAPIマッチング済みの場合は直接使用
                 if '_api_matched_game' in game:
                     matched_api_game = game['_api_matched_game']
-                    log_manager.main_logger.info(f"🚀 Using pre-matched API game: {matched_api_game.get('home')} vs {matched_api_game.get('away')}")
+                    api_home = matched_api_game.get('home', '')
+                    api_away = matched_api_game.get('away', '')
+
+                    log_manager.main_logger.info(f"🚀 Using pre-matched API game: {api_home} vs {api_away}")
+
+                    # パーサー出力を保存
+                    original_team_a = game.get('team_a', '')
+                    original_team_b = game.get('team_b', '')
 
                     # 事前マッチング成功
                     matched_game = game.copy()
+                    matched_game['team_a'] = api_home  # The Odds API公式英語名（内部処理用）
+                    matched_game['team_b'] = api_away  # The Odds API公式英語名（内部処理用）
+                    matched_game['team_a_original'] = original_team_a  # パーサー出力を保存
+                    matched_game['team_b_original'] = original_team_b  # パーサー出力を保存
                     matched_game['api_game_id'] = matched_api_game.get('id')
                     matched_game['api_game_data'] = matched_api_game
+                    matched_game['sport'] = matched_api_game.get('sport_key', game.get('sport', 'soccer'))  # sport_keyで更新
                     matched_game['match_confidence'] = 1.0  # APIマッチング済みなので最高信頼度
                     matched_games.append(matched_game)
 
-                    self.logger.info(f"✅ Pre-matched: {game.get('team_a')} vs {game.get('team_b')} -> ID {matched_api_game.get('id')}")
+                    log_manager.main_logger.info(f"✅ Pre-matched: '{original_team_a}' vs '{original_team_b}' -> API: '{api_home}' vs '{api_away}' (ID: {matched_api_game.get('id')})")
                     continue
 
                 # 従来のマッチング処理（APIマッチングがない場合のフォールバック）
@@ -623,29 +937,68 @@ class BettingPipelineOrchestrator:
                     continue
 
                 try:
-                    game_manager = self.game_manager_factory.get_manager(sport)
-                    team_names = [game.get('team_a', ''), game.get('team_b', '')]
+                    # パーサー出力（日本語/英語混在）を保存
+                    original_team_a = game.get('team_a', '')
+                    original_team_b = game.get('team_b', '')
 
-                    # フォールバックマッチング実行
-                    matched_api_game = game_manager.match_teams(team_names, api_games)
+                    # 翻訳サービスで英語ヒントを生成
+                    team_a_en_hint = self.team_translator.translate_if_needed(original_team_a) if original_team_a else ''
+                    team_b_en_hint = self.team_translator.translate_if_needed(original_team_b) if original_team_b else ''
+
+                    log_manager.main_logger.info(f"🔄 Translation: '{original_team_a}' -> '{team_a_en_hint}', '{original_team_b}' -> '{team_b_en_hint}'")
+
+                    game_manager = self.game_manager_factory.get_manager(sport)
+                    team_names_en = [team_a_en_hint, team_b_en_hint]
+
+                    # フォールバックマッチング実行（英語ヒントを使用）
+                    matched_api_game = game_manager.match_teams(team_names_en, api_games)
 
                     if matched_api_game:
                         # フォールバックマッチング成功
+                        # The Odds APIの公式英語名を採用
+
+                        # DEBUG: APIレスポンスの構造を確認
+                        log_manager.main_logger.info(f"🔍 DEBUG matched_api_game keys: {list(matched_api_game.keys())}")
+                        log_manager.main_logger.info(f"🔍 DEBUG matched_api_game: {matched_api_game}")
+
+                        # 防御的フィールドアクセス: 複数のフィールド名パターンに対応
+                        api_home = (matched_api_game.get('home_team') or
+                                   matched_api_game.get('home') or
+                                   matched_api_game.get('homeTeam') or '')
+                        api_away = (matched_api_game.get('away_team') or
+                                   matched_api_game.get('away') or
+                                   matched_api_game.get('awayTeam') or '')
+
+                        # 空チーム名検証: 将来的な類似問題の早期検出
+                        if not api_home or not api_away:
+                            log_manager.main_logger.warning(
+                                f"⚠️ API response missing team names for game ID {matched_api_game.get('id')}. "
+                                f"Available fields: {list(matched_api_game.keys())}"
+                            )
+                            warnings.append(f"API team names missing for: {original_team_a} vs {original_team_b}")
+                            continue
+
                         matched_game = game.copy()
+                        matched_game['team_a'] = api_home  # The Odds API公式英語名（内部処理用）
+                        matched_game['team_b'] = api_away  # The Odds API公式英語名（内部処理用）
+                        matched_game['team_a_original'] = original_team_a  # パーサー出力を保存
+                        matched_game['team_b_original'] = original_team_b  # パーサー出力を保存
                         matched_game['api_game_id'] = matched_api_game.get('id')
                         matched_game['api_game_data'] = matched_api_game
+                        matched_game['sport'] = matched_api_game.get('sport_key', game.get('sport', 'soccer'))  # sport_keyで更新
                         matched_game['match_confidence'] = 0.8  # フォールバック信頼度
                         matched_games.append(matched_game)
 
-                        self.logger.info(f"✅ Fallback match: {team_names[0]} vs {team_names[1]} -> ID {matched_api_game.get('id')}")
+                        log_manager.main_logger.info(f"✅ Fallback match: '{original_team_a}' vs '{original_team_b}' -> API: '{api_home}' vs '{api_away}' (ID: {matched_api_game.get('id')})")
                     else:
                         # マッチング失敗
-                        warnings.append(f"No match found for: {team_names[0]} vs {team_names[1]}")
-                        self.logger.info(f"❌ No match found for: {team_names[0]} vs {team_names[1]}")
+                        warnings.append(f"No match found for: {original_team_a} vs {original_team_b} (en hints: {team_a_en_hint} vs {team_b_en_hint})")
+                        log_manager.main_logger.info(f"❌ No match found for: {original_team_a} vs {original_team_b} (en hints: {team_a_en_hint} vs {team_b_en_hint})")
 
                 except Exception as e:
                     error_msg = f"Matching failed for {game.get('team_a', 'N/A')} vs {game.get('team_b', 'N/A')}: {str(e)}"
                     errors.append(error_msg)
+                    log_manager.main_logger.error(f"❌ {error_msg}")
 
             self.logger.info(f"✅ Matching completed: {len(matched_games)}/{len(parsed_games)} games matched")
 
@@ -706,13 +1059,31 @@ class BettingPipelineOrchestrator:
                         self.logger.error(f"❌ PIPELINE: Available methods: {available_methods}")
                         raise AttributeError(f"GameManager {type(game_manager).__name__} does not have get_odds_realtime method")
 
-                    odds_data = await game_manager.get_odds_realtime(api_game_id)
+                    # Extract _theodds_event from api_game_data if available (for The Odds API)
+                    api_game_data = game.get('api_game_data', {})
+                    self.logger.info(f"🔍 PIPELINE DEBUG: api_game_data keys = {list(api_game_data.keys()) if api_game_data else 'None'}")
+                    theodds_event = api_game_data.get('_theodds_event')
+                    self.logger.info(f"🔍 PIPELINE DEBUG: theodds_event = {theodds_event is not None}")
+
+                    # Pass _theodds_event as kwarg so The Odds API can use it
+                    kwargs = {'force_refresh': True}
+                    if theodds_event:
+                        kwargs['_theodds_event'] = theodds_event
+                        self.logger.info(f"🎲 PIPELINE: Passing _theodds_event with sport_key={theodds_event.get('sport_key')}")
+                    else:
+                        self.logger.warning(f"⚠️ PIPELINE: No _theodds_event found for game {api_game_id}")
+
+                    odds_data = await game_manager.get_odds_realtime(api_game_id, **kwargs)
                     self.logger.info(f"🎲 PIPELINE: get_odds_realtime returned {type(odds_data)} with value: {odds_data}")
 
                     game_with_odds = game.copy()  # 常にゲームを追加
 
                     if odds_data:
                         self.logger.info(f"🎲 PIPELINE: Processing odds_data with bookmakers: {len(odds_data.get('bookmakers', []))}")
+
+                        # DEBUG: オッズデータの構造を確認
+                        import json
+                        self.logger.info(f"📊 ODDS DATA STRUCTURE: {json.dumps(odds_data, indent=2, ensure_ascii=False)}")
 
                         # オッズデータの処理
                         processed_odds = self.odds_processor.extract_team_specific_handicap_odds(
@@ -868,6 +1239,7 @@ class BettingPipelineOrchestrator:
 
                     legacy_odds = self.odds_processor.convert_team_specific_to_legacy_format(odds_data)
                     self.logger.info(f"🔍 ODDS CONVERSION OUTPUT: {legacy_odds}")
+                    self.logger.info(f"🔍 ODDS CONVERSION TYPE: {type(legacy_odds)}, LENGTH: {len(legacy_odds) if legacy_odds else 0}")
 
                     if not legacy_odds:
                         # オッズ取得失敗の詳細調査
@@ -918,7 +1290,13 @@ class BettingPipelineOrchestrator:
                     self.logger.info(f"🔍 REQUESTED BET: team={requested_team}, side={requested_side}, line={pinnacle_line}")
 
                     # ユーザーが指定したチーム・ラインでEV計算
-                    requested_result = ev_evaluator.evaluate_simplified_line(legacy_odds, pinnacle_line, requested_side)
+                    self.logger.info(f"🔍 BEFORE EVALUATE: Calling evaluate_simplified_line with legacy_odds={legacy_odds}, pinnacle_line={pinnacle_line}, requested_side={requested_side}")
+                    requested_result = ev_evaluator.evaluate_simplified_line(
+                        legacy_odds,
+                        pinnacle_line,
+                        requested_side
+                    )
+                    self.logger.info(f"🔍 AFTER EVALUATE: returned type={type(requested_result)}, value={requested_result}")
                     self.logger.info(f"🔍 REQUESTED RESULT: {requested_result}")
 
                     # 対戦相手チームのEV計算
@@ -926,14 +1304,28 @@ class BettingPipelineOrchestrator:
                     opposite_side = "away" if requested_side == "home" else "home"
 
                     self.logger.info(f"🔍 OPPOSITE BET: side={opposite_side}, line={pinnacle_line} (同じラインを使用)")
-                    opposite_result = ev_evaluator.evaluate_simplified_line(legacy_odds, pinnacle_line, opposite_side)
+                    opposite_result = ev_evaluator.evaluate_simplified_line(
+                        legacy_odds,
+                        pinnacle_line,
+                        opposite_side
+                    )
                     self.logger.info(f"🔍 OPPOSITE RESULT: {opposite_result}")
 
                     # Use original parser output for jp_line (Japanese bookmaker representation)
                     # jp_line: パーサーからの元の値（日本ブックメーカー表記）
                     # pinnacle_line: 符号調整済み（Pinnacle API互換）
-                    game_with_ev['jp_line'] = game.get('raw_handicap', game.get('handicap', '0'))  # ✅ Use raw format like "0半7"
-                    game_with_ev['pinnacle_line'] = pinnacle_line                    # ✅ Pinnacle API compatible line
+                    raw_h = game.get('raw_handicap')
+                    if raw_h is not None and raw_h != '':
+                        game_with_ev['jp_line'] = raw_h  # ✅ Use raw format like "1.2" or "0半7"
+                    else:
+                        # フォールバック: handicap値をJP表記に逆変換
+                        h_val = game.get('handicap', 0)
+                        try:
+                            from converter.unified_handicap_converter import pinnacle_to_jp
+                            game_with_ev['jp_line'] = pinnacle_to_jp(float(h_val))
+                        except:
+                            game_with_ev['jp_line'] = str(h_val)
+                    game_with_ev['pinnacle_line'] = pinnacle_line  # ✅ Pinnacle API compatible line
                     game_with_ev['jp_odds'] = legacy_odds                            # ✅ Use existing odds
                     game_with_ev['legacy_odds'] = legacy_odds                        # 既存レガシーオッズ
                     game_with_ev['ev_calculated'] = True
@@ -1028,16 +1420,26 @@ class BettingPipelineOrchestrator:
             api_games_lookup = {game['id']: game for sport_games in api_games_by_sport.values() for game in sport_games}
 
             for game in games_with_ev:
-                full_api_game = api_games_lookup.get(game.get('api_game_id'))
-
-                # 1. 正しいキーで試合日時を取得
+                # 1. api_game_dataから試合日時を取得し、日跨ぎ表記に変換
+                api_game_data = game.get('api_game_data', {})
                 game_date = None
-                if full_api_game and 'raw' in full_api_game and isinstance(full_api_game.get('raw'), dict):
-                    game_date = full_api_game['raw'].get('date')
+                raw_date = None
+                if api_game_data:
+                    # The Odds API uses 'commence_time', API-SPORTS uses 'datetime'
+                    raw_date = api_game_data.get('commence_time') or api_game_data.get('datetime')
+                    game_date = convert_to_day_crossing_format(raw_date)
 
-                # 2. ホーム・アウェイチームを特定
-                home_team_parsed = game.get('team_a_original', game.get('team_a', ''))
-                away_team_parsed = game.get('team_b_original', game.get('team_b', ''))
+                # 2. ホーム・アウェイチームを特定（英語名→日本語翻訳）
+                # Stage 3で team_a/team_b は既に The Odds API公式英語名に更新済み
+                home_team_en = game.get('api_game_data', {}).get('home', game.get('team_a', ''))
+                away_team_en = game.get('api_game_data', {}).get('away', game.get('team_b', ''))
+
+                log_manager.main_logger.info(f"🌐 Stage6 Translation: EN='{home_team_en}' vs '{away_team_en}'")
+
+                home_team_parsed = translate_team_to_japanese(home_team_en, self.en_to_jp_team_dict)
+                away_team_parsed = translate_team_to_japanese(away_team_en, self.en_to_jp_team_dict)
+
+                log_manager.main_logger.info(f"🇯🇵 Stage6 Result: JP='{home_team_parsed}' vs '{away_team_parsed}'")
                 
                 # 3. ホーム・アウェイそれぞれに結果を割り当て
                 is_home_fav = game.get('fav_team') == home_team_parsed
@@ -1054,9 +1456,19 @@ class BettingPipelineOrchestrator:
                     "verdict": game.get('verdict_dog') if is_home_fav else game.get('verdict'),
                 }
 
+                # リーグ名を日本語に変換
+                sport_api_name = game.get('sport')
+                # STAGE3で更新されなかった場合のフォールバック
+                if sport_api_name in ['soccer', 'baseball', 'basketball']:  # 汎用名の場合
+                    api_game_data = game.get('api_game_data', {})
+                    sport_api_name = api_game_data.get('sport_key', sport_api_name)
+                sport_jp_name = translate_league_name_to_japanese(sport_api_name)
+
                 final_game = {
                     "game_date": game_date,
-                    "sport": game.get('sport'),
+                    "_raw_game_date": raw_date,  # ソート用に保持
+                    "sport": sport_api_name,  # API形式のリーグ名
+                    "sport_jp": sport_jp_name,  # 日本語リーグ名
                     "home_team_jp": home_team_parsed,
                     "away_team_jp": away_team_parsed,
                     "match_confidence": game.get('match_confidence'),
@@ -1070,6 +1482,13 @@ class BettingPipelineOrchestrator:
                     "error": game.get("error"),
                 }
                 final_games.append(final_game)
+
+            # リーグ別にグルーピング & 時間順にソート
+            final_games = group_and_sort_games_by_league(final_games)
+
+            # ソート用の内部フィールドを削除
+            for game in final_games:
+                game.pop('_raw_game_date', None)
 
             self.logger.info(f"✅ Finalization completed: {len(final_games)} games finalized")
 
@@ -1368,6 +1787,14 @@ class BettingPipelineOrchestrator:
             if any(pattern in name.lower() for name in all_names for pattern in european_patterns):
                 log_manager.main_logger.info(f"✅ LEVEL 4 SUCCESS: Detected Soccer via European patterns")
                 return 'soccer'
+
+            # NBAチーム名パターン（NBA）
+            nba_patterns_jp = ['レイカーズ', 'ウォリアーズ', 'セルティックス', 'ヒート', 'ネッツ', 'バックス', 'サンズ', 'ナゲッツ', 'クリッパーズ', 'マーベリックス', 'ニックス', 'ラプターズ']
+            nba_patterns_en = ['lakers', 'warriors', 'celtics', 'heat', 'nets', 'bucks', 'suns', 'nuggets', 'clippers', 'mavericks', 'knicks', 'raptors', '76ers', 'sixers']
+            if any(pattern in name for name in all_names for pattern in nba_patterns_jp) or \
+               any(pattern in name.lower() for name in all_names for pattern in nba_patterns_en):
+                log_manager.main_logger.info(f"✅ LEVEL 4 SUCCESS: Detected NBA via NBA patterns")
+                return 'nba'
 
             # 追加パターン学習機能
             learned_mappings = self._load_learned_sport_mappings()
