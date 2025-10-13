@@ -38,9 +38,9 @@ if os.path.exists("app/static"):
 
 # Pipeline Orchestrator の初期化（API keyは実行時に設定）
 def get_pipeline():
-    odds_api_key = os.environ.get("ODDS_API_KEY", "test_api_key")
-    # Railway の古いコードとの互換性のため、api_key のみ使用
-    return BettingPipelineOrchestrator(api_key=odds_api_key)
+    # ODDS_API_KEY を優先、なければ API_SPORTS_KEY（後方互換性）
+    api_key = os.environ.get("ODDS_API_KEY") or os.environ.get("API_SPORTS_KEY", "test_api_key")
+    return BettingPipelineOrchestrator(api_key=api_key)
 
 class AnalyzePasteRequest(BaseModel):
     paste_text: str  # Changed from 'text' to 'paste_text' to match frontend
@@ -58,23 +58,12 @@ class GameEvaluation(BaseModel):
     # Game Info
     game_date: Optional[str] = None
     sport: Optional[str] = None
-    league_jp: Optional[str] = None  # リーグ名 (日本語)
-    league_en: Optional[str] = None  # リーグ名 (英語)
-    sport_key: Optional[str] = None  # sport_key (内部用)
-
-    # Team Info
-    team_a_jp: Optional[str] = None  # チームA (日本語)
-    team_b_jp: Optional[str] = None  # チームB (日本語)
-    team_a_en: Optional[str] = None  # チームA (英語)
-    team_b_en: Optional[str] = None  # チームB (英語)
-
-    # Legacy fields (互換性のため残す)
     home_team_jp: Optional[str] = None
     away_team_jp: Optional[str] = None
-
+    
     # Match Info
     match_confidence: Optional[float] = None
-
+    
     # Line Info
     jp_line: Optional[str] = None
     pinnacle_line: Optional[float] = None
@@ -99,7 +88,8 @@ async def root():
 
 @app.post("/analyze_paste", response_model=List[GameEvaluation])
 async def analyze_paste_endpoint(req: AnalyzePasteRequest):
-    api_key = os.environ.get("ODDS_API_KEY")
+    # ODDS_API_KEY を使用（Railway環境変数と一致）
+    api_key = os.environ.get("ODDS_API_KEY") or os.environ.get("API_SPORTS_KEY")
     if not api_key:
         log_manager.log_error("API configuration error", Exception("ODDS_API_KEY not configured"))
         raise HTTPException(status_code=500, detail="ODDS_API_KEY not configured")
@@ -133,34 +123,11 @@ async def analyze_paste_endpoint(req: AnalyzePasteRequest):
         final_games = getattr(pipeline_result, 'games_processed', [])
         for game in final_games:
             # The 'game' dict now has the new structure from the orchestrator
-            # league_jp/league_en の取得
-            league_jp = game.get("league")  # パーサー出力のleagueフィールド
-            sport_key = game.get("sport_key", game.get("sport", ""))
-
-            # sport_keyからleague_enを取得
-            from converter.league_name_mapper import get_league_mapper
-            mapper = get_league_mapper()
-            _, league_en = mapper.get_league_names(sport_key)
-
             game_data = {
-                # Game Info
                 "game_date": game.get("game_date"),
                 "sport": game.get("sport"),
-                "league_jp": league_jp,
-                "league_en": league_en,
-                "sport_key": sport_key,
-
-                # Team Info (新フィールド)
-                "team_a_jp": game.get("home_team_jp"),  # homeをteam_aにマッピング
-                "team_b_jp": game.get("away_team_jp"),  # awayをteam_bにマッピング
-                "team_a_en": game.get("home_team_en"),
-                "team_b_en": game.get("away_team_en"),
-
-                # Legacy fields (互換性維持)
                 "home_team_jp": game.get("home_team_jp"),
                 "away_team_jp": game.get("away_team_jp"),
-
-                # その他
                 "match_confidence": game.get("match_confidence"),
                 "jp_line": game.get("jp_line"),
                 "pinnacle_line": game.get("pinnacle_line"),
@@ -193,13 +160,3 @@ async def analyze_paste_endpoint(req: AnalyzePasteRequest):
         log_manager.log_error("Pipeline execution failed in API endpoint", e)
         error_detail = f"Analysis failed: {str(e)[:200]}..."  # Truncate long error messages
         raise HTTPException(status_code=500, detail=error_detail)
-
-@app.get("/debug/env")
-async def debug_env():
-    """環境変数デバッグ用エンドポイント（本番では削除）"""
-    return {
-        "ODDS_API_KEY": "設定済み" if os.environ.get("ODDS_API_KEY") else "未設定",
-        "API_SPORTS_KEY": "設定済み" if os.environ.get("API_SPORTS_KEY") else "未設定",
-        "DISCORD_WEBHOOK_URL": "設定済み" if os.environ.get("DISCORD_WEBHOOK_URL") else "未設定",
-        "all_env_keys": [k for k in os.environ.keys() if not k.startswith("_")]
-    }
