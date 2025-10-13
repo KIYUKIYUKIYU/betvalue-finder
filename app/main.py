@@ -38,9 +38,8 @@ if os.path.exists("app/static"):
 
 # Pipeline Orchestrator の初期化（API keyは実行時に設定）
 def get_pipeline():
-    api_key = os.environ.get("API_SPORTS_KEY", "test_api_key")
-    theodds_api_key = os.environ.get("ODDS_API_KEY")  # The Odds API key (optional)
-    return BettingPipelineOrchestrator(api_key=api_key, theodds_api_key=theodds_api_key)
+    odds_api_key = os.environ.get("ODDS_API_KEY")
+    return BettingPipelineOrchestrator(api_key=odds_api_key or "test_api_key", theodds_api_key=odds_api_key)
 
 class AnalyzePasteRequest(BaseModel):
     paste_text: str  # Changed from 'text' to 'paste_text' to match frontend
