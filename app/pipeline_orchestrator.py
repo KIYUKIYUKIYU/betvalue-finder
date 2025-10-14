@@ -1029,6 +1029,8 @@ class BettingPipelineOrchestrator:
 
     async def _execute_finalization_stage(self, games_with_ev: List[Dict], api_games_by_sport: Dict[str, List[Dict]]) -> StageResult:
         """Stage 6: 最終処理段階 (改修版)"""
+        from converter.reverse_team_matcher import get_reverse_matcher
+
         stage_start = time.time()
         errors = []
         warnings = []
@@ -1036,6 +1038,9 @@ class BettingPipelineOrchestrator:
         try:
             self.logger.info("📋 Executing finalization stage")
             final_games = []
+
+            # 英語→日本語変換用のmatcher取得
+            reverse_matcher = get_reverse_matcher()
 
             api_games_lookup = {game['id']: game for sport_games in api_games_by_sport.values() for game in sport_games}
 
@@ -1047,12 +1052,26 @@ class BettingPipelineOrchestrator:
                 if full_api_game and 'raw' in full_api_game and isinstance(full_api_game.get('raw'), dict):
                     game_date = full_api_game['raw'].get('date')
 
-                # 2. ホーム・アウェイチームを特定
-                home_team_parsed = game.get('team_a_original', game.get('team_a', ''))
-                away_team_parsed = game.get('team_b_original', game.get('team_b', ''))
+                # 2. ホーム・アウェイチームを英語名から日本語に変換
+                home_team_english = game.get('team_a', '')
+                away_team_english = game.get('team_b', '')
+
+                # 英語→日本語変換（最初の候補を使用）
+                home_team_jp_candidates = reverse_matcher.get_japanese_candidates(home_team_english)
+                away_team_jp_candidates = reverse_matcher.get_japanese_candidates(away_team_english)
+
+                home_team_parsed = list(home_team_jp_candidates)[0] if home_team_jp_candidates else home_team_english
+                away_team_parsed = list(away_team_jp_candidates)[0] if away_team_jp_candidates else away_team_english
+
+                self.logger.info(f"🔄 Team translation: {home_team_english} → {home_team_parsed}, {away_team_english} → {away_team_parsed}")
                 
                 # 3. ホーム・アウェイそれぞれに結果を割り当て
-                is_home_fav = game.get('fav_team') == home_team_parsed
+                # fav_team（英語名）を日本語に変換して比較
+                fav_team_english = game.get('fav_team', '')
+                fav_team_jp_candidates = reverse_matcher.get_japanese_candidates(fav_team_english)
+                fav_team_jp = list(fav_team_jp_candidates)[0] if fav_team_jp_candidates else fav_team_english
+
+                is_home_fav = fav_team_jp == home_team_parsed or fav_team_english == home_team_english
                 home_team_result = {
                     "raw_pinnacle_odds": game.get('raw_odds_fav') if is_home_fav else game.get('raw_odds_dog'),
                     "fair_odds": game.get('fair_odds') if is_home_fav else game.get('fair_odds_dog'),
@@ -1066,15 +1085,25 @@ class BettingPipelineOrchestrator:
                     "verdict": game.get('verdict_dog') if is_home_fav else game.get('verdict'),
                 }
 
+                # sport_keyを取得（full_api_gameから）
+                sport_key = game.get('sport', 'soccer')  # デフォルトはsoccer
+                if full_api_game:
+                    # まず直接sport_keyを確認
+                    if 'sport_key' in full_api_game:
+                        sport_key = full_api_game['sport_key']
+                    # 次にrawフィールドの中を確認
+                    elif 'raw' in full_api_game and isinstance(full_api_game.get('raw'), dict):
+                        sport_key = full_api_game['raw'].get('sport_key', sport_key)
+
                 final_game = {
                     "game_date": game_date,
-                    "sport": game.get('sport'),
+                    "sport": sport_key,
                     "home_team_jp": home_team_parsed,
                     "away_team_jp": away_team_parsed,
                     "match_confidence": game.get('match_confidence'),
                     "jp_line": game.get('jp_line', str(game.get('handicap', '0'))),
                     "pinnacle_line": game.get('pinnacle_line'),
-                    "fav_team": game.get('fav_team'),
+                    "fav_team": fav_team_jp,  # 日本語に変換済み
                     "home_team_odds": home_team_result,
                     "away_team_odds": away_team_result,
                     "raw_odds": game.get('raw_odds'),  # Stage 4からのオッズデータを保持
