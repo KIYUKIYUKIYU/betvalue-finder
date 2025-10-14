@@ -88,7 +88,13 @@ class RealtimeTheOddsSoccerGameManager(RealtimeGameManager):
 
             try:
                 self.logger.info(f"🔍 THE ODDS API: Fetching {sport_key}")
+                self.logger.info(f"🔍 THE ODDS API URL: {url}")
+                self.logger.info(f"🔍 THE ODDS API PARAMS: {params}")
+
                 data = await self._http_get_async(url, params=params)
+
+                self.logger.info(f"🔍 THE ODDS API RESPONSE TYPE: {type(data)}")
+                self.logger.info(f"🔍 THE ODDS API RESPONSE LENGTH: {len(data) if isinstance(data, list) else 'N/A (not a list)'}")
 
                 # DEBUG: Log raw API response for first event
                 if data and len(data) > 0:
