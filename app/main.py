@@ -127,6 +127,23 @@ async def get_upcoming_matches(sport: str = "soccer_epl", limit: int = 5):
         log_manager.log_error("Failed to fetch upcoming matches", e)
         raise HTTPException(status_code=500, detail=f"Failed to fetch matches: {str(e)}")
 
+@app.post("/debug/parse-only")
+async def debug_parse_only(req: AnalyzePasteRequest):
+    """パーサーのみテスト（診断用）"""
+    try:
+        pipeline = get_pipeline()
+        parse_result = pipeline.parser.parse_detailed(req.paste_text)
+
+        return {
+            "success": True,
+            "games_found": len(parse_result.games) if parse_result else 0,
+            "games": parse_result.games if parse_result else [],
+            "confidence": parse_result.confidence if parse_result else 0,
+            "method_used": parse_result.method_used if parse_result else "unknown"
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
 @app.post("/analyze_paste", response_model=List[GameEvaluation])
 async def analyze_paste_endpoint(req: AnalyzePasteRequest):
     # ODDS_API_KEY を使用（Railway環境変数と一致）
