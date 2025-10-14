@@ -86,6 +86,47 @@ async def root():
     except FileNotFoundError:
         return HTMLResponse(content="<h1>BetValue Finder API v4.0</h1><p>Complete pipeline integration with enhanced parsing, team mapping, game matching, odds fetching, and EV calculation.</p><a href='/docs'>API Docs</a>")
 
+@app.get("/debug/upcoming-matches")
+async def get_upcoming_matches(sport: str = "soccer_epl", limit: int = 5):
+    """今後予定されている試合を取得（テスト用）"""
+    import requests
+    from datetime import datetime
+
+    api_key = os.environ.get("ODDS_API_KEY") or os.environ.get("API_SPORTS_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="ODDS_API_KEY not configured")
+
+    try:
+        url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds/"
+        params = {
+            'apiKey': api_key,
+            'regions': 'eu',
+            'markets': 'h2h'
+        }
+
+        response = requests.get(url, params=params, timeout=15)
+        response.raise_for_status()
+        games = response.json()
+
+        results = []
+        for game in games[:limit]:
+            commence_time = datetime.fromisoformat(game['commence_time'].replace('Z', '+00:00'))
+            results.append({
+                "home_team": game['home_team'],
+                "away_team": game['away_team'],
+                "commence_time": commence_time.isoformat(),
+                "sport_key": game['sport_key']
+            })
+
+        return {
+            "total_matches": len(games),
+            "showing": len(results),
+            "matches": results
+        }
+    except Exception as e:
+        log_manager.log_error("Failed to fetch upcoming matches", e)
+        raise HTTPException(status_code=500, detail=f"Failed to fetch matches: {str(e)}")
+
 @app.post("/analyze_paste", response_model=List[GameEvaluation])
 async def analyze_paste_endpoint(req: AnalyzePasteRequest):
     # ODDS_API_KEY を使用（Railway環境変数と一致）
