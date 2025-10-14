@@ -120,10 +120,22 @@ class BettingPipelineOrchestrator:
         self.team_translator = ComprehensiveTeamTranslator()
         # MockJapaneseBookmaker removed - using original parser output for jp_line
 
+        # GameManager instance cache - reuse instances to preserve event cache
+        self._game_manager_cache = {}
+
         # 設定
         self.default_sport_hint = "mixed"
         self.match_confidence_threshold = 0.7
         self.enable_ev_calculation = True
+
+    def _get_cached_game_manager(self, sport: str):
+        """Get or create cached game manager instance to preserve event cache"""
+        if sport not in self._game_manager_cache:
+            self._game_manager_cache[sport] = self.game_manager_factory.get_manager(sport)
+            self.logger.info(f"🏭 Created new GameManager for sport: {sport}")
+        else:
+            self.logger.info(f"♻️ Reusing cached GameManager for sport: {sport}")
+        return self._game_manager_cache[sport]
 
     async def execute_pipeline(
         self,
@@ -516,7 +528,7 @@ class BettingPipelineOrchestrator:
             # スポーツ別にAPIからゲームを取得
             for sport, games in games_by_sport.items():
                 try:
-                    game_manager = self.game_manager_factory.get_manager(sport)
+                    game_manager = self._get_cached_game_manager(sport)
 
                     # 今日と明日の試合を取得 (スポーツ検出と同期)
                     today = datetime.now()
@@ -694,8 +706,8 @@ class BettingPipelineOrchestrator:
                     continue
 
                 try:
-                    # GameManagerからオッズを取得
-                    game_manager = self.game_manager_factory.get_manager(sport)
+                    # GameManagerからオッズを取得 (キャッシュされたインスタンスを使用)
+                    game_manager = self._get_cached_game_manager(sport)
                     self.logger.info(f"🎲 PIPELINE: About to call get_odds_realtime for {sport} game {api_game_id}")
                     self.logger.info(f"🎲 PIPELINE: GameManager type: {type(game_manager).__name__}")
 

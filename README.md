@@ -651,6 +651,70 @@ LEAGUE_TRANSLATION_MAP = {
 
 ## 📝 最近の更新履歴
 
+### v5.7.0 (2025-10-14) - The Odds API統合完了・GameManager instance cache修正 🎉
+
+#### 🔥 API統合の完全移行
+- ✅ **API-Sports完全削除** - システム全体をThe Odds APIに統一
+- ✅ **RealtimeTheOddsSoccerGameManager採用** - `pipeline_orchestrator.py`で正式採用
+- ✅ **364試合取得成功** - The Odds API経由でサッカー試合データ正常取得
+
+#### 🐛 重要なバグ修正
+- ✅ **GameManager instance cache問題修正**
+  - **問題**: Stage 2とStage 4で異なるGameManagerインスタンスを作成
+  - **原因**: Stage 2で`_events_cache`にイベント情報を保存 → Stage 4で新しいインスタンス作成 → キャッシュ空
+  - **結果**: "⚠️ No event metadata for {event_id}" エラー
+  - **解決策**: `BettingPipelineOrchestrator`に`_game_manager_cache`を追加し、同じインスタンスを再利用
+
+**修正内容** (`app/pipeline_orchestrator.py`):
+```python
+# __init__にキャッシュ追加
+self._game_manager_cache = {}
+
+# キャッシュ取得メソッド
+def _get_cached_game_manager(self, sport: str):
+    if sport not in self._game_manager_cache:
+        self._game_manager_cache[sport] = self.game_manager_factory.get_manager(sport)
+        self.logger.info(f"🏭 Created new GameManager for sport: {sport}")
+    else:
+        self.logger.info(f"♻️ Reusing cached GameManager for sport: {sport}")
+    return self._game_manager_cache[sport]
+
+# Stage 2 (API取得) で使用
+game_manager = self._get_cached_game_manager(sport)  # ← NEW
+
+# Stage 4 (オッズ取得) で同じインスタンスを再利用
+game_manager = self._get_cached_game_manager(sport)  # ← NEW
+```
+
+#### 📊 動作確認結果
+✅ Stage 1 (Parsing): 1試合パース成功
+✅ Stage 2 (API Fetch): 364試合取得 (The Odds API)
+✅ Stage 3 (Matching): 1試合マッチング成功
+✅ Stage 4 (Odds Retrieval): オッズ取得成功 (Odds: True)
+⚠️ Stage 5 (EV Calculation): ラインミスマッチ（後述）
+✅ Stage 6 (Finalization): 完了
+
+#### ⚠️ 既知の制限事項
+**ラインミスマッチ問題**:
+- **状況**: ユーザーが1.5ラインを要求 → Pinnacleは0.5, -0.5のみ提供
+- **原因**: 試合開始まで時間がある場合、提供されるラインが限定的
+- **エラー**: "❌ Could not calculate rigorous fair_prob for line 1.5"
+- **今後の対応**:
+  - 短期: エラーメッセージの明確化（利用可能なライン表示）
+  - 中期: ライン監視機能（試合開始前に定期チェック）
+  - 長期: 最も近いラインの提案機能
+
+#### 🎯 システムの現状
+- **The Odds API統合**: ✅ 完了
+- **試合データ取得**: ✅ 正常動作
+- **チーム名マッチング**: ✅ 正常動作
+- **オッズ取得**: ✅ 正常動作
+- **EV計算**: ⚠️ ライン提供状況に依存
+
+**次のステップ**: Railwayデプロイ + 本番環境での動作確認
+
+---
+
 ### v1.0.0 (2025-10-12) - 課金・ユーザー管理システム完全実装 🎉
 - ✅ **認証システム**: JWT + Argon2id
 - ✅ **サブスクリプション決済**: Stripe統合（月額/年額/チケット）
