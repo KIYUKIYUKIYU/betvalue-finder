@@ -20,7 +20,7 @@ from app.nlp_enhanced_parser import EnhancedUniversalParser as EnhancedBettingPa
 from app.enhanced_team_mapper import EnhancedTeamMapper
 from converter.unified_handicap_converter import jp_to_pinnacle
 from converter.ev_evaluator import EVEvaluator
-from game_manager.realtime_soccer import RealtimeSoccerGameManager
+from game_manager.realtime_theodds_soccer import RealtimeTheOddsSoccerGameManager
 from game_manager.realtime_mlb import RealtimeMLBGameManager
 from game_manager.realtime_npb import RealtimeNPBGameManager
 from converter.comprehensive_team_translator import ComprehensiveTeamTranslator
@@ -95,14 +95,14 @@ class GameManagerFactory:
         # 既存動作を完全維持（デフォルト）
         if sport_lower in ['soccer', 'football']:
             # Soccer は __init__ 内で cache_dir="data/soccer" をハードコードしているため指定不要
-            return RealtimeSoccerGameManager(api_key=self.api_key)
+            return RealtimeTheOddsSoccerGameManager(api_key=self.api_key)
         elif sport_lower in ['mlb', 'baseball']:
             return RealtimeMLBGameManager(api_key=self.api_key, cache_dir="data/mlb", enable_retries=False)
         elif sport_lower in ['npb']:
             return RealtimeNPBGameManager(api_key=self.api_key, cache_dir="data/npb")
         else:
             self.logger.warning(f"Unknown sport: {sport}, using Soccer manager as fallback")
-            return RealtimeSoccerGameManager(api_key=self.api_key)
+            return RealtimeTheOddsSoccerGameManager(api_key=self.api_key)
 
 class BettingPipelineOrchestrator:
     """ベッティング分析パイプラインの統合オーケストレーター"""
