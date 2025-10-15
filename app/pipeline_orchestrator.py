@@ -22,7 +22,7 @@ from converter.unified_handicap_converter import jp_to_pinnacle
 from converter.ev_evaluator import EVEvaluator
 from game_manager.realtime_theodds_soccer import RealtimeTheOddsSoccerGameManager
 from game_manager.realtime_mlb import RealtimeMLBGameManager
-from game_manager.realtime_npb import RealtimeNPBGameManager
+from game_manager.realtime_theodds_npb import RealtimeTheOddsNPBGameManager
 from converter.comprehensive_team_translator import ComprehensiveTeamTranslator
 from converter.odds_processor import OddsProcessor
 from converter.unified_line_evaluator import UnifiedLineEvaluator
@@ -99,7 +99,7 @@ class GameManagerFactory:
         elif sport_lower in ['mlb', 'baseball']:
             return RealtimeMLBGameManager(api_key=self.api_key, cache_dir="data/mlb", enable_retries=False)
         elif sport_lower in ['npb']:
-            return RealtimeNPBGameManager(api_key=self.api_key, cache_dir="data/npb")
+            return RealtimeTheOddsNPBGameManager(api_key=self.api_key)
         else:
             self.logger.warning(f"Unknown sport: {sport}, using Soccer manager as fallback")
             return RealtimeTheOddsSoccerGameManager(api_key=self.api_key)
