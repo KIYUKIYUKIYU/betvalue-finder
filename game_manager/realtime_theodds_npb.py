@@ -112,50 +112,105 @@ class RealtimeTheOddsNPBGameManager(RealtimeGameManager):
                 self.logger.warning(f"⚠️ No event metadata for {event_id}")
                 return None
 
-            # Extract odds from bookmakers -> markets -> outcomes
-            bookmakers = theodds_event.get("bookmakers", [])
+            sport_key = theodds_event.get("sport_key")
 
-            if not bookmakers:
-                self.logger.warning(f"⚠️ No bookmakers data for event {event_id}")
+            # Make fresh API call for latest odds
+            url = f"{self.API_BASE}/sports/{sport_key}/odds"
+
+            params = {
+                "apiKey": self.api_key,
+                "regions": "eu",
+                "markets": "spreads",
+                "bookmakers": "pinnacle",
+                "oddsFormat": "decimal",
+                "dateFormat": "iso",
+                "eventIds": event_id  # Fetch only this specific event
+            }
+
+            self.logger.info(f"🔄 THE ODDS API (NPB): Fetching fresh odds for event {event_id}")
+
+            data = await self._http_get_async(url, params=params)
+
+            if not data or len(data) == 0:
+                self.logger.warning(f"⚠️ No fresh odds data returned for event {event_id}")
                 return None
 
-            for bookmaker in bookmakers:
-                if bookmaker.get("key") == "pinnacle":
-                    markets = bookmaker.get("markets", [])
-                    for market in markets:
-                        if market.get("key") == "spreads":
-                            outcomes = market.get("outcomes", [])
+            # Get the first (and only) event from response
+            fresh_event = data[0]
 
-                            # The Odds API format: home team and away team with point/price
-                            home_team = theodds_event.get("home_team")
-                            away_team = theodds_event.get("away_team")
+            # Convert to API-Sports format for compatibility
+            odds_data = self._format_odds_data(fresh_event)
 
-                            odds_data = {
-                                "home_team": home_team,
-                                "away_team": away_team,
-                                "spreads": {}
-                            }
-
-                            for outcome in outcomes:
-                                team_name = outcome.get("name")
-                                point = outcome.get("point")
-                                price = outcome.get("price")
-
-                                if point is not None and price is not None:
-                                    odds_data["spreads"][point] = {
-                                        "team": team_name,
-                                        "odds": price
-                                    }
-
-                            self.logger.info(f"✅ THE ODDS API (NPB) ODDS EXTRACTED: {odds_data}")
-                            return odds_data
-
-            self.logger.warning(f"⚠️ No Pinnacle spreads found for event {event_id}")
-            return None
+            return odds_data
 
         except Exception as e:
             self.logger.error(f"❌ Error fetching odds for NPB game {game_id}: {e}")
             return None
+
+    def _format_odds_data(self, event: Dict) -> Dict:
+        """
+        Convert The Odds API format to API-Sports format for compatibility
+        Same as Soccer implementation
+        """
+        bookmakers = []
+
+        for bm in event.get("bookmakers", []):
+            if bm.get("key") != "pinnacle":
+                continue
+
+            bets = []
+
+            for market in bm.get("markets", []):
+                if market.get("key") != "spreads":
+                    continue
+
+                values = []
+                home_team = event.get("home_team", "")
+                away_team = event.get("away_team", "")
+
+                for outcome in market.get("outcomes", []):
+                    team_name = outcome.get("name", "")
+                    point = outcome.get("point", 0)
+                    price = outcome.get("price", 0)
+
+                    # Determine if this is Home or Away
+                    if team_name == home_team:
+                        side = "Home"
+                    elif team_name == away_team:
+                        side = "Away"
+                    else:
+                        side = team_name
+
+                    # Format as "Home +0.25" or "Away -0.25"
+                    value_str = f"{side} {point:+.2f}".replace("+-", "-")
+
+                    values.append({
+                        "value": value_str,
+                        "odd": str(price)
+                    })
+
+                if values:
+                    bets.append({
+                        "id": 4,  # Asian Handicap ID in API-Sports
+                        "name": "Asian Handicap",
+                        "values": values
+                    })
+
+            if bets:
+                bookmakers.append({
+                    "id": 4,  # Pinnacle ID in API-Sports
+                    "name": "Pinnacle",
+                    "bets": bets
+                })
+
+        result = {
+            "fixture_id": event.get("id"),
+            "bookmakers": bookmakers
+        }
+
+        self.logger.info(f"📤 THE ODDS API (NPB) _format_odds_data returning {len(bookmakers)} bookmakers")
+
+        return result
 
     def _format_game_data(self, event: Dict) -> Dict:
         """
