@@ -45,6 +45,13 @@ class RealtimeTheOddsSoccerGameManager(RealtimeGameManager):
         from converter.reverse_team_matcher import get_reverse_matcher
         self.reverse_matcher = get_reverse_matcher()
 
+        # マーケット戦略を初期化 (NEW: Strategy Pattern)
+        from .market_strategy_factory import MarketStrategyFactory, MarketType
+        market_type = kwargs.get("market_type", MarketType.ALTERNATE_SPREADS)
+        self.market_strategy, self.fallback_strategy = MarketStrategyFactory.create_with_fallback(
+            market_type, self.logger
+        )
+
     def get_sport_name(self) -> str:
         return "THEODDS_SOCCER"
 
@@ -129,13 +136,12 @@ class RealtimeTheOddsSoccerGameManager(RealtimeGameManager):
 
     async def _fetch_odds_async(self, game_id: str, **kwargs) -> Optional[Dict]:
         """
-        Fetch fresh odds for a specific game in real-time
+        Fetch fresh odds for a specific game in real-time using strategy pattern
         Makes a new API call every time to get the latest odds
         """
         self.logger.info(f"🎯 THE ODDS API _fetch_odds_async called for game_id={game_id}")
         try:
             # Extract event_id from the kwargs if available
-            # The event_id is The Odds API's UUID format
             event_id = kwargs.get("event_id", game_id)
             self.logger.info(f"🎯 THE ODDS API event_id={event_id}")
 
@@ -152,49 +158,40 @@ class RealtimeTheOddsSoccerGameManager(RealtimeGameManager):
 
             sport_key = theodds_event.get("sport_key")
 
-            # Make fresh API call for latest odds
-            url = f"{self.API_BASE}/sports/{sport_key}/odds"
+            # NEW: Use strategy pattern to fetch odds
+            await self._ensure_session()
 
-            params = {
-                "apiKey": self.api_key,
-                "regions": "eu",
-                "markets": "spreads",
-                "bookmakers": "pinnacle",
-                "oddsFormat": "decimal",
-                "dateFormat": "iso",
-                "eventIds": event_id  # Fetch only this specific event
-            }
+            # Try primary strategy
+            odds_data = await self.market_strategy.fetch_odds(
+                session=self._session,
+                api_key=self.api_key,
+                sport_key=sport_key,
+                event_id=event_id,
+                regions="eu",
+                bookmakers="pinnacle"
+            )
 
-            self.logger.info(f"🔄 THE ODDS API: Fetching fresh odds for event {event_id}")
+            # If primary strategy failed and fallback is available, try fallback
+            if not odds_data and self.fallback_strategy:
+                self.logger.info(f"🔄 PRIMARY strategy failed, trying FALLBACK strategy")
+                odds_data = await self.fallback_strategy.fetch_odds(
+                    session=self._session,
+                    api_key=self.api_key,
+                    sport_key=sport_key,
+                    event_id=event_id,
+                    regions="eu",
+                    bookmakers="pinnacle"
+                )
 
-            data = await self._http_get_async(url, params=params)
-
-            if not data or len(data) == 0:
-                self.logger.warning(f"⚠️ No fresh odds data returned for event {event_id}")
-                return None
-
-            # Get the first (and only) event from response
-            fresh_event = data[0]
-
-            # Convert to API-Sports format for compatibility
-            odds_data = self._format_odds_data(fresh_event)
-
-            # Log data freshness
-            for bookmaker in fresh_event.get("bookmakers", []):
-                last_update = bookmaker.get("last_update")
-                if last_update:
-                    try:
-                        update_dt = datetime.fromisoformat(last_update.replace('Z', '+00:00'))
-                        now_dt = datetime.now(update_dt.tzinfo)
-                        age_minutes = (now_dt - update_dt).total_seconds() / 60
-                        self.logger.info(f"⏰ THE ODDS API FRESH: Event {event_id} odds updated {last_update} ({age_minutes:.1f} min ago)")
-                    except:
-                        self.logger.info(f"⏰ THE ODDS API FRESH: Event {event_id} odds updated {last_update}")
+            if odds_data:
+                # Count outcomes for logging
+                outcome_count = self._count_outcomes(odds_data)
+                self.logger.info(f"✅ Odds retrieved: {outcome_count} outcome(s)")
 
             return odds_data
 
         except Exception as e:
-            self.logger.warning(f"⚠️ The Odds API fresh odds fetch failed for {game_id}: {e}")
+            self.logger.warning(f"⚠️ The Odds API odds fetch failed for {game_id}: {e}")
             return None
 
     def _normalize_team_name(self, team_name: str) -> str:
@@ -393,107 +390,13 @@ class RealtimeTheOddsSoccerGameManager(RealtimeGameManager):
         except (KeyError, TypeError):
             return None
 
-    def _format_odds_data(self, event: Dict) -> Dict:
-        """
-        Convert The Odds API format to API-Sports format for compatibility
-
-        The Odds API format:
-        {
-            "bookmakers": [{
-                "key": "pinnacle",
-                "markets": [{
-                    "key": "spreads",
-                    "outcomes": [{
-                        "name": "Hellas Verona",
-                        "point": -0.25,
-                        "price": 2.13
-                    }]
-                }]
-            }]
-        }
-
-        API-Sports format:
-        {
-            "fixture_id": "...",
-            "bookmakers": [{
-                "id": 4,
-                "name": "Pinnacle",
-                "bets": [{
-                    "id": 4,
-                    "name": "Asian Handicap",
-                    "values": [{
-                        "value": "Home -0.25",
-                        "odd": "2.13"
-                    }]
-                }]
-            }]
-        }
-        """
-        self.logger.info(f"📥 THE ODDS API _format_odds_data called")
-        self.logger.info(f"📥 THE ODDS API input event bookmakers count: {len(event.get('bookmakers', []))}")
-
-        bookmakers = []
-
-        for bm in event.get("bookmakers", []):
-            if bm.get("key") != "pinnacle":
-                continue
-
-            bets = []
-
-            for market in bm.get("markets", []):
-                if market.get("key") != "spreads":
-                    continue
-
-                values = []
-                home_team = event.get("home_team", "")
-                away_team = event.get("away_team", "")
-
-                for outcome in market.get("outcomes", []):
-                    team_name = outcome.get("name", "")
-                    point = outcome.get("point", 0)
-                    price = outcome.get("price", 0)
-
-                    # Determine if this is Home or Away
-                    if team_name == home_team:
-                        side = "Home"
-                    elif team_name == away_team:
-                        side = "Away"
-                    else:
-                        side = team_name
-
-                    # Format as "Home +0.25" or "Away -0.25"
-                    value_str = f"{side} {point:+.2f}".replace("+-", "-")
-
-                    values.append({
-                        "value": value_str,
-                        "odd": str(price)
-                    })
-
-                if values:
-                    bets.append({
-                        "id": 4,  # Asian Handicap ID in API-Sports
-                        "name": "Asian Handicap",
-                        "values": values
-                    })
-
-            if bets:
-                bookmakers.append({
-                    "id": 4,  # Pinnacle ID in API-Sports
-                    "name": "Pinnacle",
-                    "bets": bets
-                })
-
-        result = {
-            "fixture_id": event.get("id"),
-            "bookmakers": bookmakers
-        }
-
-        self.logger.info(f"📤 THE ODDS API _format_odds_data returning {len(bookmakers)} bookmakers")
-        if bookmakers:
-            for bm in bookmakers:
-                self.logger.info(f"📤 THE ODDS API bookmaker: {bm.get('name')}, bets: {len(bm.get('bets', []))}")
-
-        return result
+    def _count_outcomes(self, odds_data: Dict) -> int:
+        """Count total outcomes in odds data (for logging)"""
+        count = 0
+        for bookmaker in odds_data.get('bookmakers', []):
+            for bet in bookmaker.get('bets', []):
+                count += len(bet.get('values', []))
+        return count
 
     def fetch_games(self, date: datetime, **kwargs) -> List[Dict]:
         """Synchronous wrapper for async fetch_games"""

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-The Odds API integration for NPB (Nippon Professional Baseball) odds
-Provides fresh Pinnacle odds data for Japanese baseball
+The Odds API integration for NBA (National Basketball Association)
+Provides fresh Pinnacle odds data with reverse team matching
 """
 from .realtime_game_manager import RealtimeGameManager
 from datetime import datetime, timedelta
@@ -13,14 +13,14 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from converter.comprehensive_team_translator import ComprehensiveTeamTranslator
 
 
-class RealtimeTheOddsNPBGameManager(RealtimeGameManager):
-    """The Odds API implementation for NPB"""
+class RealtimeTheOddsNBAGameManager(RealtimeGameManager):
+    """The Odds API implementation for NBA"""
 
     API_BASE = "https://api.the-odds-api.com/v4"
-    SPORT_KEY = "baseball_npb"
+    SPORT_KEY = "basketball_nba"  # NBA sport key
 
     def __init__(self, api_key: str, **kwargs):
-        super().__init__(api_key=api_key, cache_dir="data/theodds_npb", **kwargs)
+        super().__init__(api_key=api_key, cache_dir="data/theodds_nba", **kwargs)
         self.team_translator = ComprehensiveTeamTranslator()
         self._events_cache = {}  # Cache events to avoid redundant API calls
 
@@ -36,7 +36,7 @@ class RealtimeTheOddsNPBGameManager(RealtimeGameManager):
         )
 
     def get_sport_name(self) -> str:
-        return "THEODDS_NPB"
+        return "THEODDS_NBA"
 
     def _prepare_headers(self, headers: Dict) -> Dict:
         """The Odds API doesn't use headers for authentication"""
@@ -44,35 +44,23 @@ class RealtimeTheOddsNPBGameManager(RealtimeGameManager):
 
     async def _fetch_games_async(self, date: datetime, **kwargs) -> List[Dict]:
         """
-        Fetch NPB games from The Odds API
+        Fetch NBA games from The Odds API
         Note: The Odds API returns games + odds in a single call
         """
-        url = f"{self.API_BASE}/sports/{self.SPORT_KEY}/odds"
-
         params = {
             "apiKey": self.api_key,
-            "regions": "eu",  # European bookmakers
-            "markets": "spreads",  # Asian Handicap only
+            "regions": "us",  # US bookmakers (NBA is US-based)
+            "markets": "spreads",  # Point Spread (equivalent to Asian Handicap for basketball)
             "bookmakers": "pinnacle",  # Pinnacle only
             "oddsFormat": "decimal",
             "dateFormat": "iso",
         }
 
+        url = f"{self.API_BASE}/sports/{self.SPORT_KEY}/odds"
+
         try:
-            self.logger.info(f"🔍 THE ODDS API (NPB): Fetching {self.SPORT_KEY}")
-            self.logger.info(f"🔍 THE ODDS API URL: {url}")
-            self.logger.info(f"🔍 THE ODDS API PARAMS: {params}")
-
+            self.logger.info(f"🔍 THE ODDS API: Fetching {self.SPORT_KEY}")
             data = await self._http_get_async(url, params=params)
-
-            self.logger.info(f"🔍 THE ODDS API RESPONSE TYPE: {type(data)}")
-            self.logger.info(f"🔍 THE ODDS API RESPONSE LENGTH: {len(data) if isinstance(data, list) else 'N/A (not a list)'}")
-
-            # DEBUG: Log raw API response for first event
-            if data and len(data) > 0:
-                import json
-                sample_event = data[0]
-                self.logger.info(f"🔍 DEBUG RAW API EVENT (NPB): {json.dumps(sample_event, indent=2, ensure_ascii=False)}")
 
             # Cache events for later odds retrieval
             for event in data:
@@ -82,7 +70,7 @@ class RealtimeTheOddsNPBGameManager(RealtimeGameManager):
 
             games = [self._format_game_data(event) for event in data if event]
 
-            self.logger.info(f"🔍 THE ODDS API (NPB): {len(games)} games")
+            self.logger.info(f"🔍 THE ODDS API: {self.SPORT_KEY} → {len(games)} games")
 
             # Log remaining requests
             if hasattr(self, '_last_response_headers'):
@@ -90,11 +78,11 @@ class RealtimeTheOddsNPBGameManager(RealtimeGameManager):
                 if remaining:
                     self.logger.info(f"📊 The Odds API requests remaining: {remaining}")
 
-            return games
-
         except Exception as e:
-            self.logger.error(f"❌ The Odds API fetch failed for NPB: {e}")
+            self.logger.error(f"❌ The Odds API fetch failed for {self.SPORT_KEY}: {e}")
             return []
+
+        return games
 
     async def _fetch_odds_async(self, game_id: str, **kwargs) -> Optional[Dict]:
         """Fetch fresh odds using strategy pattern"""
@@ -139,65 +127,43 @@ class RealtimeTheOddsNPBGameManager(RealtimeGameManager):
             self.logger.warning(f"⚠️ The Odds API odds fetch failed for {game_id}: {e}")
             return None
 
-    def match_teams(self, teams: List[str], api_games: List[Dict]) -> Optional[Dict]:
+    def match_teams(self, teams: List[str], games: List[Dict]) -> Optional[Dict]:
         """
-        マルチレイヤーマッチング: 英語正規化 → 逆引き日本語フォールバック
-        Multi-layer matching: Normalized English → Reverse Japanese fallback
-
-        契約不変 (Contract unchanged):
-        - Input: teams (List[str]), api_games (List[Dict])
-        - Output: Optional[Dict] - unchanged API game object
-
-        Args:
-            teams: チーム名のリスト [team_a, team_b]
-            api_games: APIから取得した試合データのリスト
-
-        Returns:
-            マッチした試合データ、見つからない場合はNone
+        逆引きマッチング: APIの英語チーム名 → 日本語候補に変換してユーザー入力とマッチング
         """
-        if len(teams) < 2:
-            self.logger.warning("❌ NPB MATCHING: Invalid teams list (less than 2 teams)")
+        team_a_name, team_b_name = teams[0], teams[1]
+        if not team_a_name or not team_b_name:
             return None
 
-        team_a_name, team_b_name = teams[0], teams[1]
-
-        self.logger.info(f"🔍 NPB MATCHING: '{team_a_name}' vs '{team_b_name}'")
-        self.logger.info(f"🔍 Searching through {len(api_games)} available games")
-
-        # Layer 1: 英語正規化マッチング（優先）
-        matched = self._match_normalized_english(teams, api_games)
-        if matched:
-            return matched
-
-        # Layer 2: 逆引きマッチング（フォールバック）
-        self.logger.info(f"🔄 Falling back to REVERSE MATCHER (Japanese-based matching)")
+        self.logger.info(f"🔍 THE ODDS API NBA MATCH_TEAMS (REVERSE): Input teams {teams}")
+        self.logger.info(f"🔍 Searching through {len(games)} available games")
 
         user_teams = [team_a_name, team_b_name]
 
-        for game in api_games:
-            home_name = game.get("home", "")
-            away_name = game.get("away", "")
+        for game in games:
+            home_name = game.get("home_team", "")
+            away_name = game.get("away_team", "")
 
             if not home_name or not away_name:
                 continue
 
             # 逆引きマッチャーを使ってマッチング
-            # home と team_a OR team_b がマッチし、away と残りのチームがマッチするか確認
             home_matches_a = self.reverse_matcher.match(home_name, [team_a_name])
             home_matches_b = self.reverse_matcher.match(home_name, [team_b_name])
             away_matches_a = self.reverse_matcher.match(away_name, [team_a_name])
             away_matches_b = self.reverse_matcher.match(away_name, [team_b_name])
 
-            # 両方向でチェック: (home=A and away=B) or (home=B and away=A)
+            # 両方向でチェック
             match_found = False
             if (home_matches_a and away_matches_b) or (home_matches_b and away_matches_a):
                 match_found = True
 
             if match_found:
-                self.logger.info(f"✅ NPB MATCH FOUND (REVERSE): {team_a_name} vs {team_b_name} -> Game ID {game.get('game_id')}")
+                match_datetime = game.get('datetime', '')
+                self.logger.info(f"✅ THE ODDS API NBA SUCCESS (REVERSE): {team_a_name} vs {team_b_name} -> Game ID {game.get('id')}")
                 self.logger.info(f"   Matched API: {home_name} vs {away_name}")
+                self.logger.info(f"   Match Date/Time: {match_datetime}")
 
-                # デバッグ: 日本語候補を表示
                 home_candidates = self.reverse_matcher.get_japanese_candidates(home_name)
                 away_candidates = self.reverse_matcher.get_japanese_candidates(away_name)
                 self.logger.info(f"   Home candidates: {list(home_candidates)[:3]}")
@@ -205,20 +171,33 @@ class RealtimeTheOddsNPBGameManager(RealtimeGameManager):
 
                 return game
 
-        self.logger.warning(f"❌ No match found for: {team_a_name} vs {team_b_name}")
-        self.logger.warning(f"   Total games searched: {len(api_games)}")
-
-        # デバッグ: 最初の3試合を表示
-        self.logger.warning(f"   First 3 API games:")
-        for i, game in enumerate(api_games[:3], 1):
-            home = game.get('home', 'N/A')
-            away = game.get('away', 'N/A')
-            home_norm = self._normalize_team_name(home)
-            away_norm = self._normalize_team_name(away)
-            self.logger.warning(f"     {i}. {home} vs {away}")
-            self.logger.warning(f"        Normalized: {home_norm} vs {away_norm}")
-
+        self.logger.warning(f"❌ No match found (REVERSE) for: {team_a_name} vs {team_b_name}")
+        self.logger.warning(f"   Total games searched: {len(games)}")
         return None
+
+    def _format_game_data(self, event: Dict) -> Optional[Dict]:
+        """Convert The Odds API event to standard game format"""
+        try:
+            return {
+                "id": event.get("id"),
+                "home_team": event.get("home_team"),
+                "away_team": event.get("away_team"),
+                "sport_key": event.get("sport_key"),
+                "commence_time": event.get("commence_time"),
+                "datetime": event.get("commence_time"),
+                "status": "Not Started",
+                "_theodds_event": event
+            }
+        except (KeyError, TypeError):
+            return None
+
+    def _count_outcomes(self, odds_data: Dict) -> int:
+        """Count total outcomes in odds data (for logging)"""
+        count = 0
+        for bookmaker in odds_data.get('bookmakers', []):
+            for bet in bookmaker.get('bets', []):
+                count += len(bet.get('values', []))
+        return count
 
     def fetch_games(self, date: datetime, **kwargs) -> List[Dict]:
         """Synchronous wrapper for async fetch_games"""
