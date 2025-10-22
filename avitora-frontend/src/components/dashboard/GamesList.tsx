@@ -7,7 +7,14 @@ interface GamesListProps {
 }
 
 export function GamesList({ data }: GamesListProps) {
-  if (data.games.length === 0) {
+  // Check if all sports have no games
+  const totalGames =
+    data.games.mlb.length +
+    data.games.npb.length +
+    data.games.soccer.length +
+    data.games.nba.length;
+
+  if (totalGames === 0) {
     return (
       <Card>
         <div className="text-center py-gap-xl text-muted">
@@ -17,57 +24,45 @@ export function GamesList({ data }: GamesListProps) {
     );
   }
 
-  const groupedBySport: Record<string, typeof data.games> = {};
-  data.games.forEach((game) => {
-    if (!groupedBySport[game.sport]) {
-      groupedBySport[game.sport] = [];
-    }
-    groupedBySport[game.sport].push(game);
-  });
+  const sportLabels: Record<string, string> = {
+    mlb: 'MLB',
+    npb: 'NPB',
+    soccer: 'サッカー',
+    nba: 'NBA',
+  };
 
   return (
     <div className="space-y-gap-md">
-      {Object.entries(groupedBySport).map(([sport, games]) => (
-        <Card key={sport} title={sport.toUpperCase()} subtitle={`${games.length}試合`}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gap-md">
-            {games.map((game, index) => (
-              <div
-                key={index}
-                className="p-gap-md rounded-lg border border-gray-200 hover:border-primary-500 transition-colors"
-              >
-                <div className="flex items-center justify-between mb-gap-xs">
-                  <div className="font-medium text-gray-900">
-                    {game.home_team} vs {game.away_team}
+      {Object.entries(data.games).map(([sport, games]) => {
+        if (games.length === 0) return null;
+
+        return (
+          <Card key={sport} title={sportLabels[sport]} subtitle={`${games.length}試合`}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gap-md">
+              {games.map((game) => (
+                <div
+                  key={game.id}
+                  className="p-gap-md rounded-lg border border-gray-200 hover:border-primary-500 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-gap-xs">
+                    <div className="font-medium text-gray-900">
+                      {game.home_team_jp} vs {game.away_team_jp}
+                    </div>
+                    <div className="text-sm text-muted">
+                      {game.start_time_display || format(new Date(game.start_time_jst), 'HH:mm')}
+                    </div>
                   </div>
-                  <div className="text-sm text-muted">
-                    {format(new Date(game.commence_time), 'HH:mm')}
-                  </div>
+                  {game.league_jp && (
+                    <div className="text-xs text-muted mt-gap-xs">
+                      {game.league_jp}
+                    </div>
+                  )}
                 </div>
-                <div className="grid grid-cols-3 gap-gap-sm text-sm">
-                  <div>
-                    <div className="text-muted">ホーム</div>
-                    <div className="font-medium text-gray-900">
-                      {game.home_odds?.toFixed(2) || '—'}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-muted">ドロー</div>
-                    <div className="font-medium text-gray-900">
-                      {game.draw_odds?.toFixed(2) || '—'}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-muted">アウェイ</div>
-                    <div className="font-medium text-gray-900">
-                      {game.away_odds?.toFixed(2) || '—'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      ))}
+              ))}
+            </div>
+          </Card>
+        );
+      })}
     </div>
   );
 }
